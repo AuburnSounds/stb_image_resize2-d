@@ -370,7 +370,7 @@ import stb_image_resize2.horizontals;
 import stb_image_resize2.verticals;
 import stb_image_resize2.coders;
 
-static if (__VERSION__ >= 2098)
+static if (hasRestrict)
     import core.attribute: restrict;
 else
     enum restrict = 0;

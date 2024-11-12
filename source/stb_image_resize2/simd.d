@@ -4,7 +4,8 @@ nothrow @nogc @safe:
 
 import inteli.avx2intrin;
 import stb_image_resize2.types;
-static if (__VERSION__ >= 2098)
+
+static if (hasRestrict)
     import core.attribute: restrict;
 else
     enum restrict = 0;

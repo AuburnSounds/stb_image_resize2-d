@@ -2,6 +2,16 @@ module stb_image_resize2.types;
 
 nothrow @nogc @system:
 
+
+version(LDC)
+{
+    package enum bool hasRestrict = (__VERSION__ >= 2098);
+}
+else
+{
+    package enum bool hasRestrict = false;
+}
+
 public
 {
     alias stbir_uint8  = ubyte;
