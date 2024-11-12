@@ -1,0 +1,12 @@
+{
+	"name": "stb_image_resize2-d",
+	"description": "Port of stb_image_resize2.h",
+    "license": "public domain",
+    "importPaths": ["source"],
+    "sourcePaths": ["source"],
+
+    "dependencies":
+    {
+    	"intel-intrinsics": "~>1.0"
+    }
+}
