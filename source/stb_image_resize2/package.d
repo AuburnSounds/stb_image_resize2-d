@@ -2788,7 +2788,7 @@ static void stbir__free_internal_mem( stbir__info *info )
         { 
             void * p = info.alloced_mem; 
             info.alloced_mem  = null;
-            STBIR_FREE(info.alloced_mem, info.user_data);
+            STBIR_FREE(p, info.user_data);
         }
     }
 }
