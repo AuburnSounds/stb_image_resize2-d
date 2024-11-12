@@ -1,0 +1,10 @@
+{
+	"name": "bench",
+	"description": "benchmark several image resizing libraries",
+
+	"dependencies": 
+	{
+		"dplug:graphics": "~>14.0",
+		"stb_image_resize2-d": { "path": "../.." }
+	}
+}
