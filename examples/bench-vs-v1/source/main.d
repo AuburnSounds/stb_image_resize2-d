@@ -32,7 +32,6 @@ void testDplug(DirEntry[] pngs)
         OwnedImage!RGBA[] images = new OwnedImage!RGBA[pngs.length];
         OwnedImage!RGBA[] resized = new OwnedImage!RGBA[pngs.length];
 
-
         foreach(size_t i, pngfile; pngs)
         {
             writefln("Loading %s", pngfile);
@@ -85,7 +84,6 @@ void testDplug(DirEntry[] pngs)
                 writefln("Resized %s in %s, mpps = %s", pngs[i], convertMicroSecondsToDisplay(timeUs), mpps);
             }
         }
-
     }
     // wait
     GC.collect();
