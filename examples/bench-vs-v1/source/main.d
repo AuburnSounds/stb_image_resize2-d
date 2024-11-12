@@ -48,8 +48,8 @@ void testDplug(DirEntry[] pngs)
         if (!images.length)
             throw new Exception("No .png images found in input/ directory. Put PNG images there.");
 
-        string[] resizerNames = ["stb_image_resize2-d", "dplug:graphics"];
-        for(int VER = 0; VER < 2; ++VER)
+        string[] resizerNames = ["stb_image_resize2-d", "dplug:graphics", "arsd imageresize.d"];
+        for(int VER = 0; VER < 3; ++VER)
         {
             writefln("*** Resize using method %s", resizerNames[VER]);
             foreach(size_t i, OwnedImage!RGBA src; images)
@@ -64,8 +64,12 @@ void testDplug(DirEntry[] pngs)
                     {
                         if (VER == 0)
                             resizer2.resizeImage_sRGBWithAlpha(images[i].toRef, resized[i].toRef);
-                        else
+                        else if (VER == 1)
                             resizer.resizeImage_sRGBWithAlpha(images[i].toRef, resized[i].toRef);
+                        else if (VER == 2)
+                        {
+                            arsdImageResize(images[i].toRef, resized[i].toRef);
+                        }
                     }
                     long timeB = getTickUs(false);
                     if (timeB - timeA < timeUs)
@@ -160,4 +164,22 @@ struct ImageResizer2
                                  STBIR_RGBA);
         assert(pels);
     }
+}
+
+void arsdImageResize(ImageRef!RGBA input, ImageRef!RGBA output)
+{
+    import arsd.color;
+    import arsd.imageresize;
+
+    void* pI = input.pixels;
+    void* pO = output.pixels;
+
+    ubyte[] cI = (cast(ubyte*)pI)[0..input.w * input.h*4];
+  //  Color[] cO = (cast(Color*)pO)[0..output.w * output.h];
+
+    TrueColorImage I = new TrueColorImage(input.w, input.h, cI);
+   // TrueColorImage O = new TrueColorImage(input.w, input.h, cO);
+
+    // Create TrueColorImage for source and dest, cause it just needs to point somewhere
+    imageResize!4(I, output.w, output.h);
 }
