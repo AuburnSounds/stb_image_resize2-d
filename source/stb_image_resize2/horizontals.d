@@ -26,60 +26,8 @@ struct stbir_horz_helper
     string stbir__3_coeff_setup;
     string stbir__3_coeff_remnant;
     string stbir__store_output;
-
-    //alias stbir__store_output_tiny = stbir__store_output;
-
-  /*  string stbir__2_coeff_only()
-    {
-        return stbir__1_coeff_only 
-             ~ "ofs = 1
-    }*/
 }
 
-/+
-
-#ifndef stbir__2_coeff_only
-#define stbir__2_coeff_only()             
-    stbir__1_coeff_only();                
-    stbir__1_coeff_remnant(1);
-#endif
-
-#ifndef stbir__2_coeff_remnant
-#define stbir__2_coeff_remnant( ofs )     
-    stbir__1_coeff_remnant(ofs);          
-    stbir__1_coeff_remnant((ofs)+1);
-#endif
-
-#ifndef stbir__3_coeff_only
-#define stbir__3_coeff_only()             
-    stbir__2_coeff_only();                
-    stbir__1_coeff_remnant(2);
-#endif
-
-#ifndef stbir__3_coeff_remnant
-#define stbir__3_coeff_remnant( ofs )     
-    stbir__2_coeff_remnant(ofs);          
-    stbir__1_coeff_remnant((ofs)+2);
-#endif
-
-#ifndef stbir__3_coeff_setup
-#define stbir__3_coeff_setup()
-#endif
-
-#ifndef stbir__4_coeff_start
-#define stbir__4_coeff_start()            
-    stbir__2_coeff_only();                
-    stbir__2_coeff_remnant(2);
-#endif
-
-#ifndef stbir__4_coeff_continue_from_4
-#define stbir__4_coeff_continue_from_4( ofs )     
-    stbir__2_coeff_remnant(ofs);                  
-    stbir__2_coeff_remnant((ofs)+2);
-#endif
-
-
-+/
 
 void stbir__horizontal_gather_N_channels_with_1_coeff(stbir_horz_helper h)
     (float * output_buffer, uint output_sub_size, const(float)* decode_buffer, 
