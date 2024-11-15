@@ -13,7 +13,7 @@ else
 //========================================================================================================
 // scanline decoders and encoders
 
-// Note:  we can probably save a lot of codegen by not supporting 
+// Note:  we can probably save a lot of codegen by not supporting
 // all those swizzle and just regular order.
 // Those are the template arguments of all functions below.
 enum CODER_RGBA = CoderHelper(1,     "", false, 0, 1, 2, 3, 0, 1, 2, 3,   null,   null, "i0,i1,i2,i3");
@@ -84,8 +84,8 @@ else
     alias stbir__encode_simdfX_unflip = stbir__encode_simdf4_unflip;
 }
 
-void stbir__decode_uint8_linear_scaled(CoderHelper H)(float * decodep, 
-                                                      int width_times_channels, 
+void stbir__decode_uint8_linear_scaled(CoderHelper H)(float * decodep,
+                                                      int width_times_channels,
                                                       const(void)* inputp)
 {
   @restrict float* decode = decodep;
@@ -215,18 +215,18 @@ void stbir__encode_uint8_linear_scaled(CoderHelper H)(void* outputp, int width_t
   }
 
   // do the remnants
-  static if (H.stbir__coder_min_num < 4) 
+  static if (H.stbir__coder_min_num < 4)
   {
       while( output < end_output )
       {
         stbir__simdf e0;
         STBIR_NO_UNROLL(encode);
         stbir__simdf_madd1_mem( e0, STBIR_simd_point5, STBIR_max_uint8_as_float, encode+H.stbir__encode_order0 ); output[0] = stbir__simdf_convert_float_to_uint8( e0 );
-        static if (H.stbir__coder_min_num >= 2) 
+        static if (H.stbir__coder_min_num >= 2)
         {
             stbir__simdf_madd1_mem( e0, STBIR_simd_point5, STBIR_max_uint8_as_float, encode+H.stbir__encode_order1 ); output[1] = stbir__simdf_convert_float_to_uint8( e0 );
         }
-        static if (H.stbir__coder_min_num >= 3) 
+        static if (H.stbir__coder_min_num >= 3)
         {
             stbir__simdf_madd1_mem( e0, STBIR_simd_point5, STBIR_max_uint8_as_float, encode+H.stbir__encode_order2 ); output[2] = stbir__simdf_convert_float_to_uint8( e0 );
         }
@@ -238,8 +238,8 @@ void stbir__encode_uint8_linear_scaled(CoderHelper H)(void* outputp, int width_t
 }
 
 void stbir__decode_uint8_linear(CoderHelper H)
-                        (float * decodep, 
-                        int width_times_channels, 
+                        (float * decodep,
+                        int width_times_channels,
                         const(void)* inputp )
 {
   @restrict float* decode = decodep;
@@ -364,7 +364,7 @@ void stbir__encode_uint8_linear(CoderHelper H)( void * outputp, int width_times_
       }
       output -= 4;
   }
- 
+
   // do the remnants
 
   static if (H.stbir__coder_min_num < 4)
@@ -431,29 +431,29 @@ void stbir__decode_uint8_srgb(CoderHelper H)(float * decodep, int width_times_ch
   }
 }
 
-void stbir__min_max_shift20 (ref stbir__simdi i, ref stbir__simdf f) 
+void stbir__min_max_shift20 (ref stbir__simdi i, ref stbir__simdf f)
 {
-    stbir__simdf_max( f, f, stbir_simdf_casti( STBIR_almost_zero ) ); 
-    stbir__simdf_min( f, f, stbir_simdf_casti( STBIR_almost_one  ) ); 
+    stbir__simdf_max( f, f, stbir_simdf_casti( STBIR_almost_zero ) );
+    stbir__simdf_min( f, f, stbir_simdf_casti( STBIR_almost_one  ) );
     stbir__simdi_32shr( i, stbir_simdi_castf( f ), 20 );
 }
 
-void stbir__scale_and_convert(ref stbir__simdi i, ref stbir__simdf f) 
+void stbir__scale_and_convert(ref stbir__simdi i, ref stbir__simdf f)
 {
-    stbir__simdf_madd( f, STBIR_simd_point5, STBIR_max_uint8_as_float, f ); 
-    stbir__simdf_max( f, f, stbir__simdf_zeroP() ); 
-    stbir__simdf_min( f, f, STBIR_max_uint8_as_float ); 
+    stbir__simdf_madd( f, STBIR_simd_point5, STBIR_max_uint8_as_float, f );
+    stbir__simdf_max( f, f, stbir__simdf_zeroP() );
+    stbir__simdf_min( f, f, STBIR_max_uint8_as_float );
     stbir__simdf_convert_float_to_i32( i, f );
 }
 
-void stbir__linear_to_srgb_finish(ref stbir__simdi i, ref stbir__simdf f) 
-{ 
-    stbir__simdi temp;  
-    stbir__simdi_32shr( temp, stbir_simdi_castf( f ), 12 ) ; 
-    stbir__simdi_and( temp, temp, STBIR_mastissa_mask ); 
-    stbir__simdi_or( temp, temp, cast(stbir__simdi) STBIR_topscale ); 
-    stbir__simdi_16madd( i, i, temp ); 
-    stbir__simdi_32shr( i, i, 16 ); 
+void stbir__linear_to_srgb_finish(ref stbir__simdi i, ref stbir__simdf f)
+{
+    stbir__simdi temp;
+    stbir__simdi_32shr( temp, stbir_simdi_castf( f ), 12 ) ;
+    stbir__simdi_and( temp, temp, STBIR_mastissa_mask );
+    stbir__simdi_or( temp, temp, cast(stbir__simdi) STBIR_topscale );
+    stbir__simdi_16madd( i, i, temp );
+    stbir__simdi_32shr( i, i, 16 );
 }
 
 void stbir__simdi_table_lookup1(ref stbir__simdi v0, const(uint)* table)
@@ -464,29 +464,29 @@ void stbir__simdi_table_lookup1(ref stbir__simdi v0, const(uint)* table)
     v0.ptr[3] = table[v0.array[3]];
 }
 
-void stbir__simdi_table_lookup2(ref stbir__simdi v0, 
-                                ref stbir__simdi v1, 
-                                const(uint)* table ) 
-{ 
+void stbir__simdi_table_lookup2(ref stbir__simdi v0,
+                                ref stbir__simdi v1,
+                                const(uint)* table )
+{
     stbir__simdi_table_lookup1(v0, table);
     stbir__simdi_table_lookup1(v1, table);
 }
 
-void stbir__simdi_table_lookup3(ref stbir__simdi v0, 
-                                ref stbir__simdi v1, 
-                                ref stbir__simdi v2, 
-                                const(uint)* table ) 
+void stbir__simdi_table_lookup3(ref stbir__simdi v0,
+                                ref stbir__simdi v1,
+                                ref stbir__simdi v2,
+                                const(uint)* table )
 {
     stbir__simdi_table_lookup1(v0, table);
     stbir__simdi_table_lookup1(v1, table);
     stbir__simdi_table_lookup1(v2, table);
 }
 
-void stbir__simdi_table_lookup4(ref stbir__simdi v0, 
-                                ref stbir__simdi v1, 
-                                ref stbir__simdi v2, 
-                                ref stbir__simdi v3, 
-                                const(uint)* table ) 
+void stbir__simdi_table_lookup4(ref stbir__simdi v0,
+                                ref stbir__simdi v1,
+                                ref stbir__simdi v2,
+                                ref stbir__simdi v3,
+                                const(uint)* table )
 {
     stbir__simdi_table_lookup2(v0, v1, table);
     stbir__simdi_table_lookup2(v1, v2, table);
@@ -656,8 +656,8 @@ void stbir__encode_uint8_srgb4_linearalpha(CoderHelper H)(void * outputp, int wi
 
 
 
-void stbir__decode_uint8_srgb2_linearalpha(CoderHelper H)(float * decodep, 
-                                              int width_times_channels, 
+void stbir__decode_uint8_srgb2_linearalpha(CoderHelper H)(float * decodep,
+                                              int width_times_channels,
                                               const(void)* inputp )
 {
     static assert( (H.stbir__coder_min_num == 2)
@@ -716,7 +716,7 @@ void stbir__encode_uint8_srgb2_linearalpha(CoderHelper H)( void * outputp, int w
       stbir__linear_to_srgb_finish( i2, f2 );
 
       mixin(`stbir__interleave_pack_and_store_16_u8(output, ` ~ H.encodeIndices ~ `);`);
-      
+
       output += 16;
       encode += 16;
       if ( output <= end_output )
@@ -1284,7 +1284,7 @@ void stbir__encode_float_linear(CoderHelper H)(void * outputp, int width_times_c
     }
 }
 
-static immutable float[256] stbir__srgb_uchar_to_linear_float = 
+static immutable float[256] stbir__srgb_uchar_to_linear_float =
 [
     0.000000f, 0.000304f, 0.000607f, 0.000911f, 0.001214f, 0.001518f, 0.001821f, 0.002125f, 0.002428f, 0.002732f, 0.003035f,
     0.003347f, 0.003677f, 0.004025f, 0.004391f, 0.004777f, 0.005182f, 0.005605f, 0.006049f, 0.006512f, 0.006995f, 0.007499f,
@@ -1315,7 +1315,7 @@ static immutable float[256] stbir__srgb_uchar_to_linear_float =
 
 // From https://gist.github.com/rygorous/2203834
 
-static immutable stbir_uint32[104] fp32_to_srgb8_tab4 = 
+static immutable stbir_uint32[104] fp32_to_srgb8_tab4 =
 [
     0x0073000d, 0x007a000d, 0x0080000d, 0x0087000d, 0x008d000d, 0x0094000d, 0x009a000d, 0x00a1000d,
     0x00a7001a, 0x00b4001a, 0x00c1001a, 0x00ce001a, 0x00da001a, 0x00e7001a, 0x00f4001a, 0x0101001a,

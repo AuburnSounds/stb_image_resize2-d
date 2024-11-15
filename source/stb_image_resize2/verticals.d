@@ -423,13 +423,13 @@ void stbir__vertical_gather_with_N_coeffs(stbir_vert_helper H)(
 
                 stbir__simdfX_store( output, o0 );             stbir__simdfX_store( output+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output+(2*stbir__simdfX_float_count), o2 );  stbir__simdfX_store( output+(3*stbir__simdfX_float_count), o3 );
                 output += (4*stbir__simdfX_float_count);
-                static if (CH>=1){ input0 += (4*stbir__simdfX_float_count); } 
-                static if (CH>=2){ input1 += (4*stbir__simdfX_float_count); } 
-                static if (CH>=3){ input2 += (4*stbir__simdfX_float_count); } 
-                static if (CH>=4){ input3 += (4*stbir__simdfX_float_count); } 
-                static if (CH>=5){ input4 += (4*stbir__simdfX_float_count); } 
-                static if (CH>=6){ input5 += (4*stbir__simdfX_float_count); } 
-                static if (CH>=7){ input6 += (4*stbir__simdfX_float_count); } 
+                static if (CH>=1){ input0 += (4*stbir__simdfX_float_count); }
+                static if (CH>=2){ input1 += (4*stbir__simdfX_float_count); }
+                static if (CH>=3){ input2 += (4*stbir__simdfX_float_count); }
+                static if (CH>=4){ input3 += (4*stbir__simdfX_float_count); }
+                static if (CH>=5){ input4 += (4*stbir__simdfX_float_count); }
+                static if (CH>=6){ input5 += (4*stbir__simdfX_float_count); }
+                static if (CH>=7){ input6 += (4*stbir__simdfX_float_count); }
                 static if (CH>=8){ input7 += (4*stbir__simdfX_float_count); }
             }
 

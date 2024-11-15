@@ -10,7 +10,7 @@ static if (hasRestrict)
 else
     enum restrict = 0;
 
-enum STBIR_NO_SIMD = false; 
+enum STBIR_NO_SIMD = false;
 enum STBIR_SIMD = true;
 enum STBIR_SIMD8 = true; // AVX always here thanks to intel-intrinsics
 
@@ -33,9 +33,9 @@ alias stbir__simdi = __m128i;
 //   Adding this switch saves about 5K on clang which is Captain Unroll the 3rd.
 // Use it like this: mixin STBIR_NO_UNROLL();
 void STBIR_NO_UNROLL(const(void)* p)
-{    
+{
     // PERF: verify usefulness
-    version(LDC) 
+    version(LDC)
     {
         import ldc.llvmasm;
         __asm_trusted("", "r", p);
@@ -48,7 +48,7 @@ alias STBIR_SIMD_NO_UNROLL = STBIR_NO_UNROLL;
 alias stbir_simdi_castf = _mm_castps_si128;
 alias stbir_simdf_casti = _mm_castsi128_ps;
 
-void stbir__simdf_load(ref __m128 reg, const(void)* ptr) 
+void stbir__simdf_load(ref __m128 reg, const(void)* ptr)
     @system /* memsafe if ptr has 16 addressable bytes */
 {
     reg = _mm_loadu_ps( cast(const(float)*) ptr );
@@ -97,19 +97,19 @@ void stbir__simdf_zero(ref __m128 reg)
     reg = _mm_setzero_ps();
 }
 
-void stbir__simdf_store(void* ptr, __m128 reg ) 
+void stbir__simdf_store(void* ptr, __m128 reg )
     @system // memsafe if ptr has 16 bytes addressible
 {
     _mm_storeu_ps( cast(float*)(ptr), reg );
 }
 
-void stbir__simdf_store1(void* ptr, __m128 reg ) 
+void stbir__simdf_store1(void* ptr, __m128 reg )
     @system // memsafe if ptr has 4 bytes addressible
 {
     _mm_store_ss( cast(float*)(ptr), reg );
 }
 
-void stbir__simdf_store2(void* ptr, __m128 reg ) 
+void stbir__simdf_store2(void* ptr, __m128 reg )
     @system // memsafe if ptr has 8 bytes addressible
 {
     _mm_storel_epi64( cast(__m128i*)(ptr), _mm_castps_si128(reg) );
@@ -126,13 +126,13 @@ void stbir__simdi_store(void* ptr, __m128i reg )
     _mm_storeu_si128( cast(__m128i*)(ptr), reg );
 }
 
-void stbir__simdi_store1(void* ptr, __m128i reg ) 
+void stbir__simdi_store1(void* ptr, __m128i reg )
     @system // memsafe if ptr has 4 bytes addressible
 {
     _mm_store_ss( cast(float*)(ptr), _mm_castsi128_ps(reg) );
 }
 
-void stbir__simdi_store2(void* ptr, __m128i reg ) 
+void stbir__simdi_store2(void* ptr, __m128i reg )
     @system // memsafe if ptr has 8 bytes addressible
 {
     _mm_storel_epi64( cast(__m128i*)(ptr), reg );
@@ -184,7 +184,7 @@ ubyte stbir__simdf_convert_float_to_uint8(__m128 f )
     return (cast(ubyte) _mm_cvtsi128_si32(_mm_cvttps_epi32(_mm_max_ps(_mm_min_ps(f, STBIR_max_uint8_as_float),_mm_setzero_ps()))));
 }
 
-short stbir__simdf_convert_float_to_short(__m128 f ) 
+short stbir__simdf_convert_float_to_short(__m128 f )
 {
     return (cast(ushort)_mm_cvtsi128_si32(_mm_cvttps_epi32(_mm_max_ps(_mm_min_ps(f,STBIR_max_uint16_as_float),_mm_setzero_ps()))));
 }
@@ -205,7 +205,7 @@ void stbir__simdf_mult(ref __m128 out_, __m128 a, __m128 b)
 void stbir__simdf_mult_mem(ref __m128 out_, __m128 reg, const(void)* ptr )
 @system /* memory safe if ptr = 16 bytes addressable */
 {
-    out_ = _mm_mul_ps(reg, _mm_loadu_ps( cast(const(float)*)(ptr) ) );  
+    out_ = _mm_mul_ps(reg, _mm_loadu_ps( cast(const(float)*)(ptr) ) );
 }
 
 void stbir__simdf_mult1_mem(ref __m128 out_, __m128 reg, const(void)* ptr)
@@ -217,7 +217,7 @@ void stbir__simdf_mult1_mem(ref __m128 out_, __m128 reg, const(void)* ptr)
 void stbir__simdf_add_mem(ref __m128 out_, __m128 reg, const(void)* ptr)
 @system /* memory safe if ptr = 16 bytes addressable */
 {
-    out_ = _mm_add_ps(reg, _mm_loadu_ps( cast(const(float)*)(ptr) ) );  
+    out_ = _mm_add_ps(reg, _mm_loadu_ps( cast(const(float)*)(ptr) ) );
 }
 
 void stbir__simdf_add1_mem(ref __m128 out_, __m128 reg, const(void)* ptr)
@@ -307,17 +307,17 @@ void stbir__simdf_aaa1( __m128 out_, __m128 alp, __m128 ones)
 }
 void stbir__simdf_1aaa( __m128 out_, __m128 alp, __m128 ones)
 {
-    out_ = _mm_castsi128_ps( _mm_shuffle_epi32!168( _mm_castps_si128( _mm_movelh_ps( ones, alp ) ) ) ); 
-} 
+    out_ = _mm_castsi128_ps( _mm_shuffle_epi32!168( _mm_castps_si128( _mm_movelh_ps( ones, alp ) ) ) );
+}
 void stbir__simdf_a1a1( __m128 out_, __m128 alp, __m128 ones)
 {
     out_ = _mm_or_ps( _mm_castsi128_ps( _mm_srli_epi64( _mm_castps_si128(alp), 32 ) ), STBIR_zeroones );
-} 
+}
 
 void stbir__simdf_1a1a( __m128 out_, __m128 alp, __m128 ones)
 {
     out_ = _mm_or_ps( _mm_castsi128_ps( _mm_slli_epi64( _mm_castps_si128(alp), 32 ) ), STBIR_onezeros );
-} 
+}
 
 __m128 stbir__simdf_swiz(int one, int two, int three, int four)(__m128 reg)
 {
@@ -333,12 +333,12 @@ void stbir__simdi_and( ref __m128i out_, __m128i reg0, __m128i reg1 )
 void stbir__simdi_or( ref __m128i out_, __m128i reg0, __m128i reg1 )
 {
     out_ = _mm_or_si128( reg0, reg1 ) ;
-} 
+}
 
 void stbir__simdi_16madd( ref __m128i out_, __m128i reg0, __m128i reg1 )
 {
     out_ = _mm_madd_epi16( reg0, reg1 ) ;
-} 
+}
 
 void stbir__simdf_pack_to_8bytes(ref __m128i out_, __m128 aa, __m128 bb)
 {
@@ -358,18 +358,18 @@ void stbir__simdf_load4_transposed( ref __m128 o0, ref __m128 o1, ref __m128 o2,
 @system /* memory safe if ptr points to 64 adressable bytes */
 {
     stbir__simdf_load( o0, (ptr) );
-    stbir__simdf_load( o1, (ptr)+4 ); 
-    stbir__simdf_load( o2, (ptr)+8 ); 
+    stbir__simdf_load( o1, (ptr)+4 );
+    stbir__simdf_load( o2, (ptr)+8 );
     stbir__simdf_load( o3, (ptr)+12 );
-    __m128 tmp0, tmp1, tmp2, tmp3;  
-    tmp0 = _mm_unpacklo_ps(o0, o1); 
-    tmp2 = _mm_unpacklo_ps(o2, o3); 
-    tmp1 = _mm_unpackhi_ps(o0, o1); 
-    tmp3 = _mm_unpackhi_ps(o2, o3); 
-    o0 = _mm_movelh_ps(tmp0, tmp2); 
-    o1 = _mm_movehl_ps(tmp2, tmp0); 
-    o2 = _mm_movelh_ps(tmp1, tmp3); 
-    o3 = _mm_movehl_ps(tmp3, tmp1); 
+    __m128 tmp0, tmp1, tmp2, tmp3;
+    tmp0 = _mm_unpacklo_ps(o0, o1);
+    tmp2 = _mm_unpacklo_ps(o2, o3);
+    tmp1 = _mm_unpackhi_ps(o0, o1);
+    tmp3 = _mm_unpackhi_ps(o2, o3);
+    o0 = _mm_movelh_ps(tmp0, tmp2);
+    o1 = _mm_movehl_ps(tmp2, tmp0);
+    o2 = _mm_movelh_ps(tmp1, tmp3);
+    o3 = _mm_movehl_ps(tmp3, tmp1);
 }
 
 void stbir__interleave_pack_and_store_16_u8(void* ptr, __m128i r0, __m128i r1, __m128i r2, __m128i r3)
@@ -388,7 +388,7 @@ void stbir__interleave_pack_and_store_16_u8(void* ptr, __m128i r0, __m128i r1, _
 void stbir__simdi_32shr(ref __m128i out_, __m128i reg, int imm )
 {
     out_ = _mm_srli_epi32( reg, imm );
-} 
+}
 
 /*
 
@@ -428,7 +428,7 @@ void stbir__simdf8_load(ref __m256 out_, const(void)* ptr)
 @system /* memory-safe if ptr points to 32 bytes */
 {
     out_  = _mm256_loadu_ps( cast(const(float)*)ptr );
-} 
+}
 
 void stbir__simdi8_load(ref __m256i out_, const(void)* ptr)
 @system /* memsafe if ptr points to 32 bytes */
@@ -441,7 +441,7 @@ void stbir__simdf8_mult(ref __m256 out_, __m256 a, __m256 b)
     out_  = _mm256_mul_ps(a, b);
 }
 
-void stbir__simdi8_store(void* ptr, __m256i reg )  
+void stbir__simdi8_store(void* ptr, __m256i reg )
 @system /* memsafe if ptr points to 32 bytes */
 {
     return _mm256_storeu_si256( cast(__m256i*)ptr, reg);
@@ -518,58 +518,58 @@ void stbir__simdf8_bot4s( ref __m256 out_, __m256 a, __m256 b )
 void stbir__simdf8_top4s( ref __m256 out_, __m256 a, __m256 b )
 {
     out_ = _mm256_permute2f128_ps!((1<<0)+(3<<4))(a,b);
-} 
+}
 
 alias stbir__simdf8_gettop4 = _mm256_extractf128_ps!1;
 
-void stbir__simdi8_expand_u8_to_u32(ref __m256i out0, ref __m256i out1, __m128i ireg) 
-{ 
+void stbir__simdi8_expand_u8_to_u32(ref __m256i out0, ref __m256i out1, __m128i ireg)
+{
     stbir__simdi8 a, zero  =_mm256_setzero_si256();
     enum ubyte Permute = (0<<0)+(2<<2)+(1<<4)+(3<<6);
-    a = _mm256_permute4x64_epi64!Permute( _mm256_unpacklo_epi8( _mm256_permute4x64_epi64!Permute(_mm256_castsi128_si256(ireg)), zero )); 
-    out0 = _mm256_unpacklo_epi16( a, zero ); 
-    out1 = _mm256_unpackhi_epi16( a, zero ); 
+    a = _mm256_permute4x64_epi64!Permute( _mm256_unpacklo_epi8( _mm256_permute4x64_epi64!Permute(_mm256_castsi128_si256(ireg)), zero ));
+    out0 = _mm256_unpacklo_epi16( a, zero );
+    out1 = _mm256_unpackhi_epi16( a, zero );
 }
 /*
-{ 
-    stbir__simdi a,zero = _mm_setzero_si128(); 
-    a = _mm_unpacklo_epi8( ireg, zero ); 
-    out0 = _mm256_setr_m128i( _mm_unpacklo_epi16( a, zero ), _mm_unpackhi_epi16( a, zero ) ); 
-    a = _mm_unpackhi_epi8( ireg, zero ); 
-    out1 = _mm256_setr_m128i( _mm_unpacklo_epi16( a, zero ), _mm_unpackhi_epi16( a, zero ) ); 
+{
+    stbir__simdi a,zero = _mm_setzero_si128();
+    a = _mm_unpacklo_epi8( ireg, zero );
+    out0 = _mm256_setr_m128i( _mm_unpacklo_epi16( a, zero ), _mm_unpackhi_epi16( a, zero ) );
+    a = _mm_unpackhi_epi8( ireg, zero );
+    out1 = _mm256_setr_m128i( _mm_unpacklo_epi16( a, zero ), _mm_unpackhi_epi16( a, zero ) );
 }
 */
 
-void stbir__simdf8_pack_to_16bytes(ref __m128i out_, __m256 aa, __m256 bb) 
-{ 
-    stbir__simdi t; 
-    stbir__simdf8 af,bf; 
-    stbir__simdi8 a,b; 
-    af = _mm256_min_ps( aa, STBIR_max_uint8_as_floatX ); 
-    bf = _mm256_min_ps( bb, STBIR_max_uint8_as_floatX ); 
-    af = _mm256_max_ps( af, _mm256_setzero_ps() ); 
-    bf = _mm256_max_ps( bf, _mm256_setzero_ps() ); 
-    a = _mm256_cvttps_epi32( af ); 
-    b = _mm256_cvttps_epi32( bf ); 
-    out_ = _mm_packs_epi32( _mm256_castsi256_si128(a), _mm256_extractf128_si256!1( a ) ); 
-    out_ = _mm_packus_epi16( out_, out_ ); 
-    t = _mm_packs_epi32( _mm256_castsi256_si128(b), _mm256_extractf128_si256!1( b ) ); 
-    t = _mm_packus_epi16( t, t ); 
-    out_ = _mm_castps_si128( _mm_shuffle_ps!( (0<<0)+(1<<2)+(0<<4)+(1<<6) )( _mm_castsi128_ps(out_), _mm_castsi128_ps(t) ) ) ; 
+void stbir__simdf8_pack_to_16bytes(ref __m128i out_, __m256 aa, __m256 bb)
+{
+    stbir__simdi t;
+    stbir__simdf8 af,bf;
+    stbir__simdi8 a,b;
+    af = _mm256_min_ps( aa, STBIR_max_uint8_as_floatX );
+    bf = _mm256_min_ps( bb, STBIR_max_uint8_as_floatX );
+    af = _mm256_max_ps( af, _mm256_setzero_ps() );
+    bf = _mm256_max_ps( bf, _mm256_setzero_ps() );
+    a = _mm256_cvttps_epi32( af );
+    b = _mm256_cvttps_epi32( bf );
+    out_ = _mm_packs_epi32( _mm256_castsi256_si128(a), _mm256_extractf128_si256!1( a ) );
+    out_ = _mm_packus_epi16( out_, out_ );
+    t = _mm_packs_epi32( _mm256_castsi256_si128(b), _mm256_extractf128_si256!1( b ) );
+    t = _mm_packus_epi16( t, t );
+    out_ = _mm_castps_si128( _mm_shuffle_ps!( (0<<0)+(1<<2)+(0<<4)+(1<<6) )( _mm_castsi128_ps(out_), _mm_castsi128_ps(t) ) ) ;
 }
 /* PERF: this should be faster in AVX2
-{ 
-    stbir__simdi8 t; 
-    stbir__simdf8 af,bf; 
-    stbir__simdi8 a,b; 
-    af = _mm256_min_ps( aa, STBIR_max_uint8_as_floatX ); 
-    bf = _mm256_min_ps( bb, STBIR_max_uint8_as_floatX ); 
-    af = _mm256_max_ps( af, _mm256_setzero_ps() ); 
-    bf = _mm256_max_ps( bf, _mm256_setzero_ps() ); 
-    a = _mm256_cvttps_epi32( af ); 
-    b = _mm256_cvttps_epi32( bf ); 
-    t = _mm256_permute4x64_epi64( _mm256_packs_epi32( a, b ), (0<<0)+(2<<2)+(1<<4)+(3<<6) ); 
-    out_ = _mm256_castsi256_si128( _mm256_permute4x64_epi64( _mm256_packus_epi16( t, t ), (0<<0)+(2<<2)+(1<<4)+(3<<6) ) ); 
+{
+    stbir__simdi8 t;
+    stbir__simdf8 af,bf;
+    stbir__simdi8 a,b;
+    af = _mm256_min_ps( aa, STBIR_max_uint8_as_floatX );
+    bf = _mm256_min_ps( bb, STBIR_max_uint8_as_floatX );
+    af = _mm256_max_ps( af, _mm256_setzero_ps() );
+    bf = _mm256_max_ps( bf, _mm256_setzero_ps() );
+    a = _mm256_cvttps_epi32( af );
+    b = _mm256_cvttps_epi32( bf );
+    t = _mm256_permute4x64_epi64( _mm256_packs_epi32( a, b ), (0<<0)+(2<<2)+(1<<4)+(3<<6) );
+    out_ = _mm256_castsi256_si128( _mm256_permute4x64_epi64( _mm256_packus_epi16( t, t ), (0<<0)+(2<<2)+(1<<4)+(3<<6) ) );
 }*/
 
 void stbir__simdi8_expand_u16_to_u32(ref __m256i out_, __m128i ireg)
@@ -579,28 +579,28 @@ void stbir__simdi8_expand_u16_to_u32(ref __m256i out_, __m128i ireg)
 
 
 // TODO: need that one AVX2 intrin
-void stbir__simdf8_pack_to_16words(ref __m256i out_, __m256 aa, __m256 bb) 
-{ 
-    stbir__simdf8 af,bf; 
-    stbir__simdi8 a,b; 
-    af = _mm256_min_ps( aa, STBIR_max_uint16_as_floatX ); 
-    bf = _mm256_min_ps( bb, STBIR_max_uint16_as_floatX ); 
-    af = _mm256_max_ps( af, _mm256_setzero_ps() ); 
-    bf = _mm256_max_ps( bf, _mm256_setzero_ps() ); 
-    a = _mm256_cvttps_epi32( af ); 
-    b = _mm256_cvttps_epi32( bf ); 
-    out_ = _mm256_permute4x64_epi64!((0<<0)+(2<<2)+(1<<4)+(3<<6))( _mm256_packus_epi32(a, b)); 
+void stbir__simdf8_pack_to_16words(ref __m256i out_, __m256 aa, __m256 bb)
+{
+    stbir__simdf8 af,bf;
+    stbir__simdi8 a,b;
+    af = _mm256_min_ps( aa, STBIR_max_uint16_as_floatX );
+    bf = _mm256_min_ps( bb, STBIR_max_uint16_as_floatX );
+    af = _mm256_max_ps( af, _mm256_setzero_ps() );
+    bf = _mm256_max_ps( bf, _mm256_setzero_ps() );
+    a = _mm256_cvttps_epi32( af );
+    b = _mm256_cvttps_epi32( bf );
+    out_ = _mm256_permute4x64_epi64!((0<<0)+(2<<2)+(1<<4)+(3<<6))( _mm256_packus_epi32(a, b));
 }
 
 void stbir__simdf8_0123to00001111(ref __m256 out_, __m256 in_ )
 {
-    __m256i stbir_00001111 = _mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1); 
+    __m256i stbir_00001111 = _mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1);
     out_ = _mm256_permutevar_ps ( in_, stbir_00001111 );
 }
 
 void stbir__simdf8_0123to22223333(ref __m256 out_, __m256 in_ )
 {
-    __m256i stbir_22223333 = _mm256_setr_epi32(2, 2, 2, 2, 3, 3, 3, 3); 
+    __m256i stbir_22223333 = _mm256_setr_epi32(2, 2, 2, 2, 3, 3, 3, 3);
     out_ = _mm256_permutevar_ps ( in_, stbir_22223333 );
 }
 
@@ -615,28 +615,28 @@ void stbir__simdf8_0123to2222(ref __m128 out_, __m256 in_ )
 
 
 
-#define stbir__simdi8_expand_u16_to_u32(out,ireg) 
-{ 
-stbir__simdi a,b,zero = _mm_setzero_si128(); 
-a = _mm_unpacklo_epi16( ireg, zero ); 
-b = _mm_unpackhi_epi16( ireg, zero ); 
-out = _mm256_insertf128_si256( _mm256_castsi128_si256( a ), b, 1 ); 
+#define stbir__simdi8_expand_u16_to_u32(out,ireg)
+{
+stbir__simdi a,b,zero = _mm_setzero_si128();
+a = _mm_unpacklo_epi16( ireg, zero );
+b = _mm_unpackhi_epi16( ireg, zero );
+out = _mm256_insertf128_si256( _mm256_castsi128_si256( a ), b, 1 );
 }
 
-#define stbir__simdf8_pack_to_16words(out,aa,bb) 
-{ 
-stbir__simdi t0,t1; 
-stbir__simdf8 af,bf; 
-stbir__simdi8 a,b; 
-af = _mm256_min_ps( aa, STBIR_max_uint16_as_floatX ); 
-bf = _mm256_min_ps( bb, STBIR_max_uint16_as_floatX ); 
-af = _mm256_max_ps( af, _mm256_setzero_ps() ); 
-bf = _mm256_max_ps( bf, _mm256_setzero_ps() ); 
-a = _mm256_cvttps_epi32( af ); 
-b = _mm256_cvttps_epi32( bf ); 
-t0 = _mm_packus_epi32( _mm256_castsi256_si128(a), _mm256_extractf128_si256( a, 1 ) ); 
-t1 = _mm_packus_epi32( _mm256_castsi256_si128(b), _mm256_extractf128_si256( b, 1 ) ); 
-out = _mm256_setr_m128i( t0, t1 ); 
+#define stbir__simdf8_pack_to_16words(out,aa,bb)
+{
+stbir__simdi t0,t1;
+stbir__simdf8 af,bf;
+stbir__simdi8 a,b;
+af = _mm256_min_ps( aa, STBIR_max_uint16_as_floatX );
+bf = _mm256_min_ps( bb, STBIR_max_uint16_as_floatX );
+af = _mm256_max_ps( af, _mm256_setzero_ps() );
+bf = _mm256_max_ps( bf, _mm256_setzero_ps() );
+a = _mm256_cvttps_epi32( af );
+b = _mm256_cvttps_epi32( bf );
+t0 = _mm_packus_epi32( _mm256_castsi256_si128(a), _mm256_extractf128_si256( a, 1 ) );
+t1 = _mm_packus_epi32( _mm256_castsi256_si128(b), _mm256_extractf128_si256( b, 1 ) );
+out = _mm256_setr_m128i( t0, t1 );
 }
 
 #endif
@@ -645,7 +645,7 @@ out = _mm256_setr_m128i( t0, t1 );
 #define stbir__simdf8_0123to2222( out, in ) (out) = stbir__simdf_swiz(_mm256_castps256_ps128(in), 2,2,2,2 )
 */
 
-void stbir__simdf8_load4b(ref __m256 out_, const(void)* ptr) 
+void stbir__simdf8_load4b(ref __m256 out_, const(void)* ptr)
     @system // memsafe if ptr points to 16 adressable bytes
 {
     out_ = _mm256_broadcast_ps( cast(const(__m128)*)ptr );
@@ -690,7 +690,7 @@ void stbir__simdf8_0123to00220022(ref __m256 out_, __m256 in_) { out_ = _mm256_s
 void stbir__simdf8_aaa1(ref __m256 out_, __m256 alp, __m256 ones )
 {
     enum int Blimm8 = (1<<0)+(1<<1)+(1<<2)+(0<<3)+(1<<4)+(1<<5)+(1<<6)+(0<<7);
-    out_ = _mm256_blend_ps!Blimm8( alp, ones); 
+    out_ = _mm256_blend_ps!Blimm8( alp, ones);
     enum int ShufImm8 = (3<<0) + (3<<2) + (3<<4) + (0<<6);
     out_ = _mm256_shuffle_ps!ShufImm8(out_, out_);
 }
@@ -698,26 +698,26 @@ void stbir__simdf8_aaa1(ref __m256 out_, __m256 alp, __m256 ones )
 void stbir__simdf8_1aaa(ref __m256 out_, __m256 alp, __m256 ones )
 {
     enum int Blimm8 = (0<<0)+(1<<1)+(1<<2)+(1<<3)+(0<<4)+(1<<5)+(1<<6)+(1<<7);
-    out_ = _mm256_blend_ps!Blimm8( alp, ones); 
+    out_ = _mm256_blend_ps!Blimm8( alp, ones);
     enum int ShufImm8 = (1<<0) + (0<<2) + (0<<4) + (0<<6);
     out_ = _mm256_shuffle_ps!ShufImm8(out_, out_);
 }
 
-void stbir__simdf8_a1a1(ref __m256 out_, __m256 alp, __m256 ones) 
+void stbir__simdf8_a1a1(ref __m256 out_, __m256 alp, __m256 ones)
 {
     enum int Blimm8 = (1<<0)+(0<<1)+(1<<2)+(0<<3)+(1<<4)+(0<<5)+(1<<6)+(0<<7);
-    out_ = _mm256_blend_ps!Blimm8( alp, ones); 
+    out_ = _mm256_blend_ps!Blimm8( alp, ones);
     enum int ShufImm8 = (1<<0) + (0<<2) + (3<<4) + (2<<6);
     out_ = _mm256_shuffle_ps!ShufImm8(out_, out_);
 }
 
-void stbir__simdf8_1a1a(ref __m256 out_, __m256 alp, __m256 ones) 
+void stbir__simdf8_1a1a(ref __m256 out_, __m256 alp, __m256 ones)
 {
     enum int Blimm8 = (0<<0)+(1<<1)+(0<<2)+(1<<3)+(0<<4)+(1<<5)+(0<<6)+(1<<7);
-    out_ = _mm256_blend_ps!Blimm8( alp, ones); 
+    out_ = _mm256_blend_ps!Blimm8( alp, ones);
     enum int ShufImm8 = (1<<0) + (0<<2) + (3<<4) + (2<<6);
     out_ = _mm256_shuffle_ps!ShufImm8(out_, out_);
-} 
+}
 
 
 /*void stbir__simdf8_zero(ref __m256 reg)
@@ -740,7 +740,7 @@ void stbir__simdf8_madd(ref __m256 out_, __m256 add, __m256 mul1, __m256 mul2 )
     out_ = _mm256_add_ps( add, _mm256_mul_ps( mul1, mul2 ) );
 }
 
-void stbir__simdf8_madd_mem(ref __m256 out_, __m256 add, __m256 mul, const(void)* ptr ) 
+void stbir__simdf8_madd_mem(ref __m256 out_, __m256 add, __m256 mul, const(void)* ptr )
     @system /* memory-safe if ptr has 32 bytes addressible */
 {
     out_ = _mm256_add_ps( add, _mm256_mul_ps( mul, _mm256_loadu_ps( cast(const(float)*)(ptr) ) ) );

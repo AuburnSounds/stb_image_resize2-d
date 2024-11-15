@@ -100,9 +100,9 @@ public
 
 
     // INPUT CALLBACK: this callback is used for input scanlines
-    alias stbir_input_callback = void* function( void* optional_output, 
-                                                 void* input_ptr, 
-                                                 int num_pixels, 
+    alias stbir_input_callback = void* function( void* optional_output,
+                                                 void* input_ptr,
+                                                 int num_pixels,
                                                  int x, int y, void * context );
 
     // OUTPUT CALLBACK: this callback is used for output scanlines
@@ -135,9 +135,9 @@ public
         stbir_datatype output_data_type;
         stbir_filter horizontal_filter, vertical_filter;
         stbir_edge horizontal_edge, vertical_edge;
-        stbir__kernel_callback horizontal_filter_kernel; 
+        stbir__kernel_callback horizontal_filter_kernel;
         stbir__support_callback horizontal_filter_support;
-        stbir__kernel_callback vertical_filter_kernel; 
+        stbir__kernel_callback vertical_filter_kernel;
         stbir__support_callback vertical_filter_support;
         stbir__info * samplers;
     }
@@ -179,7 +179,7 @@ enum : stbir_internal_pixel_layout
 }
 
 // layout lookups - must match stbir_internal_pixel_layout
-static immutable ubyte[17] stbir__pixel_channels = 
+static immutable ubyte[17] stbir__pixel_channels =
 [
     1,2,3,3,4,   // 1ch, 2ch, rgb, bgr, 4ch
     4,4,4,4,2,2, // RGBA,BGRA,ARGB,ABGR,RA,AR
@@ -188,7 +188,7 @@ static immutable ubyte[17] stbir__pixel_channels =
 
 // the internal pixel layout enums are in a different order, so we can easily do range comparisons of types
 //   the public pixel layout is ordered in a way that if you cast num_channels (1-4) to the enum, you get something sensible
-static immutable stbir_internal_pixel_layout[17] stbir__pixel_layout_convert_public_to_internal = 
+static immutable stbir_internal_pixel_layout[17] stbir__pixel_layout_convert_public_to_internal =
 [
     STBIRI_BGR, STBIRI_1CHANNEL, STBIRI_2CHANNEL, STBIRI_RGB, STBIRI_RGBA,
     STBIRI_4CHANNEL, STBIRI_BGRA, STBIRI_ARGB, STBIRI_ABGR, STBIRI_RA, STBIRI_AR,
@@ -196,7 +196,7 @@ static immutable stbir_internal_pixel_layout[17] stbir__pixel_layout_convert_pub
 ];
 
 // must match stbir_datatype
-static immutable ubyte[] stbir__type_size = 
+static immutable ubyte[] stbir__type_size =
 [
     1,1,1,2,4,2 // STBIR_TYPE_UINT8,STBIR_TYPE_UINT8_SRGB,STBIR_TYPE_UINT8_SRGB_ALPHA,STBIR_TYPE_UINT16,STBIR_TYPE_FLOAT,STBIR_TYPE_HALF_FLOAT
 ];
@@ -288,7 +288,7 @@ struct stbir__per_split_info
 {
     alias stbir__decode_pixels_func = void function( float * decode, int width_times_channels, const(void)* input );
     alias stbir__alpha_weight_func = void function( float * decode_buffer, int width_times_channels );
-    alias stbir__horizontal_gather_channels_func = void function( float * output_buffer, uint output_sub_size, float * decode_buffer, 
+    alias stbir__horizontal_gather_channels_func = void function( float * output_buffer, uint output_sub_size, float * decode_buffer,
                                                                   stbir__contributors * horizontal_contributors, float * horizontal_coefficients, int coefficient_width );
     alias stbir__alpha_unweight_func = void function(float * encode_buffer, int width_times_channels );
     alias stbir__encode_pixels_func = void function( void * output, int width_times_channels, float * encode );
