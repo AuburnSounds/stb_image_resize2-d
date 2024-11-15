@@ -64,33 +64,34 @@ public
     alias stbir_edge = int;
     enum : stbir_edge
     {
-        STBIR_EDGE_CLAMP   = 0,
-        STBIR_EDGE_REFLECT = 1,
-        STBIR_EDGE_WRAP    = 2,  // this edge mode is slower and uses more memory
-        STBIR_EDGE_ZERO    = 3,
+        STBIR_EDGE_CLAMP   = 0, /// Clap to edge of image
+        STBIR_EDGE_REFLECT = 1, /// Reflect on the edge of image
+        STBIR_EDGE_WRAP    = 2, /// Wrap-around. Slow and more memory.
+        STBIR_EDGE_ZERO    = 3, /// Zeroes beyond edges.
     }
 
     alias stbir_filter = int;
     enum : stbir_filter
     {
-        STBIR_FILTER_DEFAULT      = 0,  // use same filter type that easy-to-use API chooses
-        STBIR_FILTER_BOX          = 1,  // A trapezoid w/1-pixel wide ramps, same result as box for integer scale ratios
-        STBIR_FILTER_TRIANGLE     = 2,  // On upsampling, produces same results as bilinear texture filtering
-        STBIR_FILTER_CUBICBSPLINE = 3,  // The cubic b-spline (aka Mitchell-Netrevalli with B=1,C=0), gaussian-esque
-        STBIR_FILTER_CATMULLROM   = 4,  // An interpolating cubic spline
-        STBIR_FILTER_MITCHELL     = 5,  // Mitchell-Netrevalli filter with B=1/3, C=1/3
-        STBIR_FILTER_POINT_SAMPLE = 6,  // Simple point sampling
-        STBIR_FILTER_OTHER        = 7,  // User callback specified
+        STBIR_FILTER_DEFAULT      = 0,  /// use same filter type that easy-to-use API chooses
+        STBIR_FILTER_BOX          = 1,  /// A trapezoid w/1-pixel wide ramps, same result as box for integer scale ratios
+        STBIR_FILTER_TRIANGLE     = 2,  /// On upsampling, produces same results as bilinear texture filtering
+        STBIR_FILTER_CUBICBSPLINE = 3,  /// The cubic b-spline (aka Mitchell-Netrevalli with B=1,C=0), gaussian-esque
+        STBIR_FILTER_CATMULLROM   = 4,  /// An interpolating cubic spline
+        STBIR_FILTER_MITCHELL     = 5,  /// Mitchell-Netrevalli filter with B=1/3, C=1/3
+        STBIR_FILTER_POINT_SAMPLE = 6,  /// Simple point sampling
+        STBIR_FILTER_OTHER        = 7,  /// User callback specified
     }
 
+    /// Precision and power-curve of data.
     alias stbir_datatype = int;
     enum : stbir_datatype
     {
-        STBIR_TYPE_UINT8            = 0,
-        STBIR_TYPE_UINT8_SRGB       = 1,
-        STBIR_TYPE_UINT8_SRGB_ALPHA = 2,  // alpha channel, when present, should also be SRGB (this is very unusual)
-        STBIR_TYPE_UINT16           = 3,
-        STBIR_TYPE_FLOAT            = 4,
+        STBIR_TYPE_UINT8            = 0, /// [0 .. 255] for each channel, linear
+        STBIR_TYPE_UINT8_SRGB       = 1, /// [0 .. 255] for each channel, sRGB curve
+        STBIR_TYPE_UINT8_SRGB_ALPHA = 2, /// alpha channel, when present, should also be SRGB (this is very unusual)
+        STBIR_TYPE_UINT16           = 3, /// [0 .. 65535] for each channel, linear
+        STBIR_TYPE_FLOAT            = 4, /// 
         STBIR_TYPE_HALF_FLOAT       = 5
     }
 

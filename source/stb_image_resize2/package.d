@@ -375,9 +375,6 @@ static if (hasRestrict)
 else
     enum restrict = 0;
 
-//////////////////////////////////////////////////////////////////////////////
-////   start "header file" ///////////////////////////////////////////////////
-//
 // Easy-to-use API:
 //
 //     * stride is the offset between successive rows of image data
@@ -393,17 +390,17 @@ else
 //--------------------------------
 version(none)
 {
-    char* stbir_resize_uint8_srgb( const(char)*input_pixels , int input_w , int input_h, int input_stride_in_bytes,
-                                   char *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
-                                   stbir_pixel_layout pixel_type );
+    char* stbir_resize_uint8_srgb(const(char)*input_pixels, int input_w, int input_h, int input_stride_in_bytes,
+                                  char *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
+                                  stbir_pixel_layout pixel_type );
 
-    char * stbir_resize_uint8_linear( const(char)*input_pixels , int input_w , int input_h, int input_stride_in_bytes,
-                                      char *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
-                                      stbir_pixel_layout pixel_type );
+    char* stbir_resize_uint8_linear(const(char)*input_pixels, int input_w, int input_h, int input_stride_in_bytes,
+                                    char *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
+                                    stbir_pixel_layout pixel_type );
 
-    float * stbir_resize_float_linear( const(float)* input_pixels , int input_w , int input_h, int input_stride_in_bytes,
-                                       float *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
-                                       stbir_pixel_layout pixel_type );
+    float* stbir_resize_float_linear(const(float)* input_pixels , int input_w , int input_h, int input_stride_in_bytes,
+                                     float *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
+                                     stbir_pixel_layout pixel_type );
 }
 
 //===============================================================
@@ -415,15 +412,12 @@ version(none)
 //     * Edge wrap can selected explicitly
 //     * Filter can be selected explicitly
 //--------------------------------
-
-
-// medium api
 version(none)
 {
-     void *  stbir_resize( const void *input_pixels , int input_w , int input_h, int input_stride_in_bytes,
-                           void *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
-                           stbir_pixel_layout pixel_layout, stbir_datatype data_type,
-                           stbir_edge edge, stbir_filter filter );
+     void* stbir_resize(const(void)* input_pixels, int input_w , int input_h, int input_stride_in_bytes,
+                        void *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
+                        stbir_pixel_layout pixel_layout, stbir_datatype data_type,
+                        stbir_edge edge, stbir_filter filter );
 }
 
 //===============================================================
@@ -455,8 +449,8 @@ version(none)
 
     // First off, you must ALWAYS call stbir_resize_init on your resize structure before any of the other calls!
     void stbir_resize_init( STBIR_RESIZE * resize,
-                            const(void)*input_pixels,  int input_w,  int input_h, int input_stride_in_bytes, // stride can be zero
-                            void *output_pixels, int output_w, int output_h, int output_stride_in_bytes, // stride can be zero
+                            const(void)* input_pixels, int input_w,  int input_h, int input_stride_in_bytes, // stride can be zero
+                            void* output_pixels, int output_w, int output_h, int output_stride_in_bytes, // stride can be zero
                             stbir_pixel_layout pixel_layout, stbir_datatype data_type );
 
     //===============================================================
@@ -611,13 +605,7 @@ void STBIR_FREE(void* p, void* user_data) @system
 enum STBIR_DEFAULT_FILTER_UPSAMPLE = STBIR_FILTER_CATMULLROM;
 enum STBIR_DEFAULT_FILTER_DOWNSAMPLE = STBIR_FILTER_MITCHELL;
 
-
-
-
-
 enum float stbir__small_float = (cast(float)1 / (1 << 20) / (1 << 20) / (1 << 20) / (1 << 20) / (1 << 20) / (1 << 20));
-
-
 
 union stbir__FP32
 {
@@ -625,15 +613,8 @@ union stbir__FP32
   float f;
 }
 
-
 enum STBIR_FORCE_GATHER_FILTER_SCANLINES_AMOUNT = 32; // when downsampling and <= 32 scanlines of buffering, use gather. gather used down to 1/8th scaling for 25% win.
 enum STBIR_FORCE_MINIMUM_SCANLINES_FOR_SPLITS = 4; // when threading, what is the minimum number of scanlines for a split?
-
-
-
-
-
-
 
 static float stbir__filter_trapezoid(float x, float scale, void * user_data)
 {
