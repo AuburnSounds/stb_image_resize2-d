@@ -79,8 +79,19 @@ public
         STBIR_FILTER_CUBICBSPLINE = 3,  /// The cubic b-spline (aka Mitchell-Netrevalli with B=1,C=0), gaussian-esque
         STBIR_FILTER_CATMULLROM   = 4,  /// An interpolating cubic spline
         STBIR_FILTER_MITCHELL     = 5,  /// Mitchell-Netrevalli filter with B=1/3, C=1/3
-        STBIR_FILTER_POINT_SAMPLE = 6,  /// Simple point sampling
-        STBIR_FILTER_OTHER        = 7,  /// User callback specified
+
+        // GP: added more kernels
+        STBIR_FILTER_LANCZOS2     = 6,  /// Lanczos 2
+        STBIR_FILTER_LANCZOS2_5   = 7,  /// Lanczos 2.5
+        STBIR_FILTER_LANCZOS3     = 8,  /// Lanczos 3
+        STBIR_FILTER_LANCZOS4     = 9,  /// Lanczos 4
+        STBIR_FILTER_MK_2013      = 10, /// Magic Kernel, without sharpening
+        STBIR_FILTER_MKS_2013_86  = 11, /// Magic Kernel + Sharp 2013, but with only 86% sharpening (Dplug Issue #729)
+        STBIR_FILTER_MKS_2013     = 12, /// Magic Kernel + Sharp 2013 (the one recommended by John Costella in 2013)
+        STBIR_FILTER_MKS_2021     = 13, /// Magic Kernel + Sharp 2021 (the one recommended to us by John Costella in 2022)
+
+        STBIR_FILTER_POINT_SAMPLE = 14,  /// Simple point sampling
+        STBIR_FILTER_OTHER        = 15,  /// User callback specified
     }
 
     /// Precision and power-curve of data.

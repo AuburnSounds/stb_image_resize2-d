@@ -370,6 +370,8 @@ import stb_image_resize2.horizontals;
 import stb_image_resize2.verticals;
 import stb_image_resize2.coders;
 
+import core.stdc.math: fabsf, sinf;
+
 static if (hasRestrict)
     import core.attribute: restrict;
 else
@@ -692,6 +694,87 @@ static float stbir__filter_mitchell(float x, float s, void * user_data)
   return (0.0f);
 }
 
+float stbir__filter_lanczos(float A)(float x, float s, void* user_data)
+{
+    x = cast(float)fabsf(x);
+
+    if (x <= float.min_normal)
+        return 1.0f;
+
+    if (x < A)
+    {
+        float pix = 3.14159265358979323846f*x;
+        return A*sinf(pix)*sinf(pix/A)/(pix*pix);
+    }
+
+    return 0.0f;
+}
+
+float stbir__filter_mk2013(float x, float s, void* user_data)
+{
+    x = fabsf(x);
+    if (x < 0.5)
+        return 0.75 - x * x;
+
+    if (x < 1.5)
+        return 0.5 * (x - 1.5)*(x - 1.5);
+
+    return 0.0f;
+}
+
+float stbir__filter_mks2013_hs(float x, float s, void* user_data)
+{
+    // Perhaps possible to do better with "MKS 2021".
+    return 0.14f * stbir__filter_mk2013(x, s, user_data)
+        + 0.86f * stbir__filter_mks2013(x, s, user_data);
+}
+
+float stbir__filter_mks2013(float x, float s, void* user_data)
+{
+    x = fabsf(x);
+
+    if (x <= float.min_normal)
+        return 17.0f / 16.0f;
+
+    if (x < 0.5)
+        return 17.0 / 16.0 - 7.0 * x * x / 4.0;
+
+    if (x < 1.5)
+    {
+        double x2 = x * x;
+        return 0.25 * (4 * x2 - 11.0 * x + 7.0);
+    }
+
+    if (x < 2.5)
+    {
+        return -0.125 * (x - 5.0 / 2.0)*(x - 5.0 / 2.0);
+    }
+    return 0.0f;
+}
+
+float stbir__filter_mks2021(float x, float s, void* user_data)
+{
+    x = fabsf(x);
+    float x2 = x * x;
+
+    if (x < 0.5)
+        return 577.0f / 576.0f - (239.0f / 144.0f) * x2;
+
+    if (x < 1.5)
+        return (140 * x2 - 379 * x + 239) / 144.0f;
+
+    if (x < 2.5)
+        return -(24 * x2 - 113 * x + 130) / 144.0f;
+
+    if (x < 3.5)
+        return (4 * x2 - 27 * x + 45) / 144.0f;
+
+    if (x < 4.5)
+        return -(4 * x2 - 36 * x + 81) / 1152.0f;
+
+    return 0.0f;
+}
+
 static float stbir__support_zero(float s, void * user_data)
 {
   return 0;
@@ -710,6 +793,21 @@ static float stbir__support_one(float s, void * user_data)
 static float stbir__support_two(float s, void * user_data)
 {
   return 2;
+}
+
+float stbir__support_three(float s, void * user_data)
+{
+    return 3;
+}
+
+float stbir__support_four(float s, void * user_data)
+{
+    return 4;
+}
+
+float stbir__support_five(float s, void * user_data)
+{
+    return 5;
 }
 
 // This is the maximum number of input samples that can affect an output sample
@@ -2542,7 +2640,7 @@ void stbir__vertical_scatter_loop( const(stbir__info)* stbir_info, stbir__per_sp
       split_info[y].end_input_y = last_input_y;
 }
 
-static immutable stbir__kernel_callback[7] stbir__builtin_kernels =
+static immutable stbir__kernel_callback[7+8] stbir__builtin_kernels =
 [
     null,
     &stbir__filter_trapezoid,
@@ -2550,10 +2648,20 @@ static immutable stbir__kernel_callback[7] stbir__builtin_kernels =
     &stbir__filter_cubic,
     &stbir__filter_catmullrom,
     &stbir__filter_mitchell,
+
+    &stbir__filter_lanczos!2.0f,
+    &stbir__filter_lanczos!2.5f,
+    &stbir__filter_lanczos!3.0f,
+    &stbir__filter_lanczos!4.0f,
+    &stbir__filter_mk2013,
+    &stbir__filter_mks2013_hs,
+    &stbir__filter_mks2013,
+    &stbir__filter_mks2021,
+
     &stbir__filter_point
 ];
 
-static immutable stbir__support_callback[7] stbir__builtin_supports =
+static immutable stbir__support_callback[7+8] stbir__builtin_supports =
 [
     null,
     &stbir__support_trapezoid,
@@ -2561,6 +2669,15 @@ static immutable stbir__support_callback[7] stbir__builtin_supports =
     &stbir__support_two,
     &stbir__support_two,
     &stbir__support_two,
+
+    &stbir__support_two,
+    &stbir__support_three,
+    &stbir__support_three,
+    &stbir__support_four,
+    &stbir__support_three,
+    &stbir__support_three,
+    &stbir__support_three,
+    &stbir__support_five,
     &stbir__support_zeropoint5
 ];
 
