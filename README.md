@@ -31,5 +31,14 @@ void* stbir_resize(const(void)* input_pixels,  // input image
 
 ## Changes
 
-- There are more resize kernels in the port.
+- There are more resize kernels in the port:
+  - `STBIR_FILTER_LANCZOS2`
+  - `STBIR_FILTER_LANCZOS2_5`
+  - `STBIR_FILTER_LANCZOS3`
+  - `STBIR_FILTER_LANCZOS4`
+  - `STBIR_FILTER_MK_2013`
+  - `STBIR_FILTER_MKS_2013_86`
+  - `STBIR_FILTER_MKS_2013`
+  - `STBIR_FILTER_MKS_2021`
+
 - The port use portable intrinsics in `intel-intrinsics` so that the AVX2 path is used for everything.
