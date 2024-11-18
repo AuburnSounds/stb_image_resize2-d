@@ -102,7 +102,7 @@ public
         STBIR_TYPE_UINT8_SRGB       = 1, /// [0 .. 255] for each channel, sRGB curve
         STBIR_TYPE_UINT8_SRGB_ALPHA = 2, /// alpha channel, when present, should also be SRGB (this is very unusual)
         STBIR_TYPE_UINT16           = 3, /// [0 .. 65535] for each channel, linear
-        STBIR_TYPE_FLOAT            = 4, /// 
+        STBIR_TYPE_FLOAT            = 4, ///
         STBIR_TYPE_HALF_FLOAT       = 5
     }
 

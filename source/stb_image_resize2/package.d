@@ -366,8 +366,6 @@ import core.stdc.string: memcpy;
 import core.stdc.stdlib: malloc, free;
 public import stb_image_resize2.types;
 import stb_image_resize2.simd;
-import stb_image_resize2.horizontals;
-import stb_image_resize2.verticals;
 import stb_image_resize2.coders;
 
 import core.stdc.math: fabsf, sinf;

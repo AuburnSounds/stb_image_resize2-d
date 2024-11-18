@@ -10,6 +10,1507 @@ static if (hasRestrict)
 else
     enum restrict = 0;
 
+
+
+// VERTICAL RESAMPLING
+
+// include all of the vertical resamplers (both scatter and gather versions)
+
+
+alias STBIR_VERTICAL_GATHERFUNC = void function(float * output, 
+                                                const(float)* coeffs, 
+                                                const(float)** inputs, 
+                                                const(float)* input0_end );
+
+static immutable STBIR_VERTICAL_GATHERFUNC[8] stbir__vertical_gathers =
+[
+    &stbir__vertical_gather_with_1_coeffs,
+    &stbir__vertical_gather_with_2_coeffs,
+    &stbir__vertical_gather_with_3_coeffs,
+    &stbir__vertical_gather_with_4_coeffs,
+    &stbir__vertical_gather_with_5_coeffs,
+    &stbir__vertical_gather_with_6_coeffs,
+    &stbir__vertical_gather_with_7_coeffs,
+    &stbir__vertical_gather_with_8_coeffs
+];
+
+static immutable STBIR_VERTICAL_GATHERFUNC[8] stbir__vertical_gathers_continues =
+[
+    &stbir__vertical_gather_with_1_coeffs_cont,
+    &stbir__vertical_gather_with_2_coeffs_cont,
+    &stbir__vertical_gather_with_3_coeffs_cont,
+    &stbir__vertical_gather_with_4_coeffs_cont,
+    &stbir__vertical_gather_with_5_coeffs_cont,
+    &stbir__vertical_gather_with_6_coeffs_cont,
+    &stbir__vertical_gather_with_7_coeffs_cont,
+    &stbir__vertical_gather_with_8_coeffs_cont
+];
+
+alias STBIR_VERTICAL_SCATTERFUNC = void function(float ** output, 
+                                                 const(float)* coeffs, 
+                                                 const(float)* inputs, 
+                                                 const(float)* input_end );
+
+static immutable STBIR_VERTICAL_SCATTERFUNC[8] stbir__vertical_scatter_sets =
+[
+    &stbir__vertical_scatter_with_1_coeffs,
+    &stbir__vertical_scatter_with_2_coeffs,
+    &stbir__vertical_scatter_with_3_coeffs,
+    &stbir__vertical_scatter_with_4_coeffs,
+    &stbir__vertical_scatter_with_5_coeffs,
+    &stbir__vertical_scatter_with_6_coeffs,
+    &stbir__vertical_scatter_with_7_coeffs,
+    &stbir__vertical_scatter_with_8_coeffs
+];
+
+static immutable STBIR_VERTICAL_SCATTERFUNC[8] stbir__vertical_scatter_blends =
+[
+    &stbir__vertical_scatter_with_1_coeffs_cont,
+    &stbir__vertical_scatter_with_2_coeffs_cont,
+    &stbir__vertical_scatter_with_3_coeffs_cont,
+    &stbir__vertical_scatter_with_4_coeffs_cont,
+    &stbir__vertical_scatter_with_5_coeffs_cont,
+    &stbir__vertical_scatter_with_6_coeffs_cont,
+    &stbir__vertical_scatter_with_7_coeffs_cont,
+    &stbir__vertical_scatter_with_8_coeffs_cont
+];
+
+
+
+
+struct stbir_vert_helper
+{
+    int STBIR__vertical_channels;
+    bool STB_IMAGE_RESIZE_VERTICAL_CONTINUE = false;
+
+    alias ch = STBIR__vertical_channels;
+}
+
+alias stbir__vertical_scatter_with_1_coeffs = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(1));
+alias stbir__vertical_scatter_with_1_coeffs_cont = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(1, true));
+alias stbir__vertical_scatter_with_2_coeffs = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(2));
+alias stbir__vertical_scatter_with_2_coeffs_cont = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(2, true));
+alias stbir__vertical_scatter_with_3_coeffs = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(3));
+alias stbir__vertical_scatter_with_3_coeffs_cont = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(3, true));
+alias stbir__vertical_scatter_with_4_coeffs = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(4));
+alias stbir__vertical_scatter_with_4_coeffs_cont = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(4, true));
+alias stbir__vertical_scatter_with_5_coeffs = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(5));
+alias stbir__vertical_scatter_with_5_coeffs_cont = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(5, true));
+alias stbir__vertical_scatter_with_6_coeffs = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(6));
+alias stbir__vertical_scatter_with_6_coeffs_cont = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(6, true));
+alias stbir__vertical_scatter_with_7_coeffs = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(7));
+alias stbir__vertical_scatter_with_7_coeffs_cont = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(7, true));
+alias stbir__vertical_scatter_with_8_coeffs = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(8));
+alias stbir__vertical_scatter_with_8_coeffs_cont = stbir__vertical_scatter_with_N_coeffs!(stbir_vert_helper(8, true));
+
+void stbir__vertical_scatter_with_N_coeffs(stbir_vert_helper H)(float ** outputs, 
+                                                                const(float)* vertical_coefficients, 
+                                                                const(float)* input, 
+                                                                const(float)* input_end )
+@system
+{
+    enum CH = H.ch;
+    static if (CH>=1) { float* output0 = outputs[0]; float c0s = vertical_coefficients[0]; }
+    static if (CH>=2) { float* output1 = outputs[1]; float c1s = vertical_coefficients[1]; }
+    static if (CH>=3) { float* output2 = outputs[2]; float c2s = vertical_coefficients[2]; }
+    static if (CH>=4) { float* output3 = outputs[3]; float c3s = vertical_coefficients[3]; }
+    static if (CH>=5) { float* output4 = outputs[4]; float c4s = vertical_coefficients[4]; }
+    static if (CH>=6) { float* output5 = outputs[5]; float c5s = vertical_coefficients[5]; }
+    static if (CH>=7) { float* output6 = outputs[6]; float c6s = vertical_coefficients[6]; }
+    static if (CH>=8) { float* output7 = outputs[7]; float c7s = vertical_coefficients[7]; }
+
+    static if (true) // SIMD there or not...
+    {
+        static if (CH>=1){ stbir__simdfX c0 = stbir__simdf_frepX( c0s ); }
+        static if (CH>=2){ stbir__simdfX c1 = stbir__simdf_frepX( c1s ); }
+        static if (CH>=3){ stbir__simdfX c2 = stbir__simdf_frepX( c2s ); }
+        static if (CH>=4){ stbir__simdfX c3 = stbir__simdf_frepX( c3s ); }
+        static if (CH>=5){ stbir__simdfX c4 = stbir__simdf_frepX( c4s ); }
+        static if (CH>=6){ stbir__simdfX c5 = stbir__simdf_frepX( c5s ); }
+        static if (CH>=7){ stbir__simdfX c6 = stbir__simdf_frepX( c6s ); }
+        static if (CH>=8){ stbir__simdfX c7 = stbir__simdf_frepX( c7s ); }
+
+        while ( ( cast(char*)input_end - cast(char*) input ) >= (16*stbir__simdfX_float_count) )
+        {
+            stbir__simdfX o0, o1, o2, o3, r0, r1, r2, r3;
+            STBIR_SIMD_NO_UNROLL(output0);
+
+            stbir__simdfX_load( r0, input );               stbir__simdfX_load( r1, input+stbir__simdfX_float_count );     stbir__simdfX_load( r2, input+(2*stbir__simdfX_float_count) );      stbir__simdfX_load( r3, input+(3*stbir__simdfX_float_count) );
+
+            static if (H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+            {
+                static if (CH>=1){ stbir__simdfX_load( o0, output0 );     stbir__simdfX_load( o1, output0+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output0+(2*stbir__simdfX_float_count) );    stbir__simdfX_load( o3, output0+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c0 );  stbir__simdfX_madd( o1, o1, r1, c0 );  stbir__simdfX_madd( o2, o2, r2, c0 );   stbir__simdfX_madd( o3, o3, r3, c0 );
+                stbir__simdfX_store( output0, o0 );    stbir__simdfX_store( output0+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output0+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output0+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=2){ stbir__simdfX_load( o0, output1 );     stbir__simdfX_load( o1, output1+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output1+(2*stbir__simdfX_float_count) );    stbir__simdfX_load( o3, output1+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c1 );  stbir__simdfX_madd( o1, o1, r1, c1 );  stbir__simdfX_madd( o2, o2, r2, c1 );   stbir__simdfX_madd( o3, o3, r3, c1 );
+                stbir__simdfX_store( output1, o0 );    stbir__simdfX_store( output1+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output1+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output1+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=3){ stbir__simdfX_load( o0, output2 );     stbir__simdfX_load( o1, output2+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output2+(2*stbir__simdfX_float_count) );    stbir__simdfX_load( o3, output2+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c2 );  stbir__simdfX_madd( o1, o1, r1, c2 );  stbir__simdfX_madd( o2, o2, r2, c2 );   stbir__simdfX_madd( o3, o3, r3, c2 );
+                stbir__simdfX_store( output2, o0 );    stbir__simdfX_store( output2+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output2+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output2+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=4){ stbir__simdfX_load( o0, output3 );     stbir__simdfX_load( o1, output3+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output3+(2*stbir__simdfX_float_count) );    stbir__simdfX_load( o3, output3+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c3 );  stbir__simdfX_madd( o1, o1, r1, c3 );  stbir__simdfX_madd( o2, o2, r2, c3 );   stbir__simdfX_madd( o3, o3, r3, c3 );
+                stbir__simdfX_store( output3, o0 );    stbir__simdfX_store( output3+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output3+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output3+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=5){ stbir__simdfX_load( o0, output4 );     stbir__simdfX_load( o1, output4+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output4+(2*stbir__simdfX_float_count) );    stbir__simdfX_load( o3, output4+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c4 );  stbir__simdfX_madd( o1, o1, r1, c4 );  stbir__simdfX_madd( o2, o2, r2, c4 );   stbir__simdfX_madd( o3, o3, r3, c4 );
+                stbir__simdfX_store( output4, o0 );    stbir__simdfX_store( output4+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output4+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output4+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=6){ stbir__simdfX_load( o0, output5 );     stbir__simdfX_load( o1, output5+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output5+(2*stbir__simdfX_float_count));    stbir__simdfX_load( o3, output5+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c5 );  stbir__simdfX_madd( o1, o1, r1, c5 );  stbir__simdfX_madd( o2, o2, r2, c5 );   stbir__simdfX_madd( o3, o3, r3, c5 );
+                stbir__simdfX_store( output5, o0 );    stbir__simdfX_store( output5+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output5+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output5+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=7){ stbir__simdfX_load( o0, output6 );     stbir__simdfX_load( o1, output6+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output6+(2*stbir__simdfX_float_count) );    stbir__simdfX_load( o3, output6+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c6 );  stbir__simdfX_madd( o1, o1, r1, c6 );  stbir__simdfX_madd( o2, o2, r2, c6 );   stbir__simdfX_madd( o3, o3, r3, c6 );
+                stbir__simdfX_store( output6, o0 );    stbir__simdfX_store( output6+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output6+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output6+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=8){ stbir__simdfX_load( o0, output7 );     stbir__simdfX_load( o1, output7+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output7+(2*stbir__simdfX_float_count) );    stbir__simdfX_load( o3, output7+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c7 );  stbir__simdfX_madd( o1, o1, r1, c7 );  stbir__simdfX_madd( o2, o2, r2, c7 );   stbir__simdfX_madd( o3, o3, r3, c7 );
+                stbir__simdfX_store( output7, o0 );    stbir__simdfX_store( output7+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output7+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output7+(3*stbir__simdfX_float_count), o3 ); }
+            }
+            else
+            {
+                static if (CH>=1){ stbir__simdfX_mult( o0, r0, c0 );      stbir__simdfX_mult( o1, r1, c0 );      stbir__simdfX_mult( o2, r2, c0 );       stbir__simdfX_mult( o3, r3, c0 );
+                stbir__simdfX_store( output0, o0 );    stbir__simdfX_store( output0+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output0+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output0+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=2){ stbir__simdfX_mult( o0, r0, c1 );      stbir__simdfX_mult( o1, r1, c1 );      stbir__simdfX_mult( o2, r2, c1 );       stbir__simdfX_mult( o3, r3, c1 );
+                stbir__simdfX_store( output1, o0 );    stbir__simdfX_store( output1+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output1+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output1+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=3){ stbir__simdfX_mult( o0, r0, c2 );      stbir__simdfX_mult( o1, r1, c2 );      stbir__simdfX_mult( o2, r2, c2 );       stbir__simdfX_mult( o3, r3, c2 );
+                stbir__simdfX_store( output2, o0 );    stbir__simdfX_store( output2+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output2+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output2+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=4){ stbir__simdfX_mult( o0, r0, c3 );      stbir__simdfX_mult( o1, r1, c3 );      stbir__simdfX_mult( o2, r2, c3 );       stbir__simdfX_mult( o3, r3, c3 );
+                stbir__simdfX_store( output3, o0 );    stbir__simdfX_store( output3+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output3+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output3+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=5){ stbir__simdfX_mult( o0, r0, c4 );      stbir__simdfX_mult( o1, r1, c4 );      stbir__simdfX_mult( o2, r2, c4 );       stbir__simdfX_mult( o3, r3, c4 );
+                stbir__simdfX_store( output4, o0 );    stbir__simdfX_store( output4+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output4+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output4+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=6){ stbir__simdfX_mult( o0, r0, c5 );      stbir__simdfX_mult( o1, r1, c5 );      stbir__simdfX_mult( o2, r2, c5 );       stbir__simdfX_mult( o3, r3, c5 );
+                stbir__simdfX_store( output5, o0 );    stbir__simdfX_store( output5+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output5+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output5+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=7){ stbir__simdfX_mult( o0, r0, c6 );      stbir__simdfX_mult( o1, r1, c6 );      stbir__simdfX_mult( o2, r2, c6 );       stbir__simdfX_mult( o3, r3, c6 );
+                stbir__simdfX_store( output6, o0 );    stbir__simdfX_store( output6+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output6+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output6+(3*stbir__simdfX_float_count), o3 ); }
+                static if (CH>=8){ stbir__simdfX_mult( o0, r0, c7 );      stbir__simdfX_mult( o1, r1, c7 );      stbir__simdfX_mult( o2, r2, c7 );       stbir__simdfX_mult( o3, r3, c7 );
+                stbir__simdfX_store( output7, o0 );    stbir__simdfX_store( output7+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output7+(2*stbir__simdfX_float_count), o2 );   stbir__simdfX_store( output7+(3*stbir__simdfX_float_count), o3 ); }
+            }
+
+            input += (4*stbir__simdfX_float_count);
+            static if (CH>=1){ output0 += (4*stbir__simdfX_float_count); } 
+            static if (CH>=2){ output1 += (4*stbir__simdfX_float_count); } 
+            static if (CH>=3){ output2 += (4*stbir__simdfX_float_count); } 
+            static if (CH>=4){ output3 += (4*stbir__simdfX_float_count); } 
+            static if (CH>=5){ output4 += (4*stbir__simdfX_float_count); } 
+            static if (CH>=6){ output5 += (4*stbir__simdfX_float_count); } 
+            static if (CH>=7){ output6 += (4*stbir__simdfX_float_count); } 
+            static if (CH>=8){ output7 += (4*stbir__simdfX_float_count); }
+        }
+
+        while ( ( cast(char*)input_end - cast(char*) input ) >= 16 )
+        {
+            stbir__simdf o0, r0;
+            STBIR_SIMD_NO_UNROLL(output0);
+
+            stbir__simdf_load( r0, input );
+
+            static if (H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+            {
+                static if (CH>=1){ stbir__simdf_load( o0, output0 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c0 ) );  stbir__simdf_store( output0, o0 ); }
+                static if (CH>=2){ stbir__simdf_load( o0, output1 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c1 ) );  stbir__simdf_store( output1, o0 ); }
+                static if (CH>=3){ stbir__simdf_load( o0, output2 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c2 ) );  stbir__simdf_store( output2, o0 ); }
+                static if (CH>=4){ stbir__simdf_load( o0, output3 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c3 ) );  stbir__simdf_store( output3, o0 ); }
+                static if (CH>=5){ stbir__simdf_load( o0, output4 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c4 ) );  stbir__simdf_store( output4, o0 ); }
+                static if (CH>=6){ stbir__simdf_load( o0, output5 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c5 ) );  stbir__simdf_store( output5, o0 ); }
+                static if (CH>=7){ stbir__simdf_load( o0, output6 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c6 ) );  stbir__simdf_store( output6, o0 ); }
+                static if (CH>=8){ stbir__simdf_load( o0, output7 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c7 ) );  stbir__simdf_store( output7, o0 ); }
+            }
+            else
+            {
+                static if (CH>=1){ stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c0 ) );   stbir__simdf_store( output0, o0 ); }
+                static if (CH>=2){ stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c1 ) );   stbir__simdf_store( output1, o0 ); }
+                static if (CH>=3){ stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c2 ) );   stbir__simdf_store( output2, o0 ); }
+                static if (CH>=4){ stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c3 ) );   stbir__simdf_store( output3, o0 ); }
+                static if (CH>=5){ stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c4 ) );   stbir__simdf_store( output4, o0 ); }
+                static if (CH>=6){ stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c5 ) );   stbir__simdf_store( output5, o0 ); }
+                static if (CH>=7){ stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c6 ) );   stbir__simdf_store( output6, o0 ); }
+                static if (CH>=8){ stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c7 ) );   stbir__simdf_store( output7, o0 ); }
+            }
+            input += 4;
+            static if (CH>=1){ output0 += 4; }
+            static if (CH>=2){ output1 += 4; }
+            static if (CH>=3){ output2 += 4; }
+            static if (CH>=4){ output3 += 4; }
+            static if (CH>=5){ output4 += 4; }
+            static if (CH>=6){ output5 += 4; }
+            static if (CH>=7){ output6 += 4; }
+            static if (CH>=8){ output7 += 4; }
+        }
+    } // if SIMD
+    else
+    {
+        while ( ( cast(char*)input_end - cast(char*) input ) >= 16 )
+        {
+            float r0, r1, r2, r3;
+            STBIR_NO_UNROLL(input);
+
+            r0 = input[0], r1 = input[1], r2 = input[2], r3 = input[3];
+
+            static if (H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+            {
+                static if (CH>=1){ output0[0] += ( r0 * c0s ); output0[1] += ( r1 * c0s ); output0[2] += ( r2 * c0s ); output0[3] += ( r3 * c0s ); }
+                static if (CH>=2){ output1[0] += ( r0 * c1s ); output1[1] += ( r1 * c1s ); output1[2] += ( r2 * c1s ); output1[3] += ( r3 * c1s ); }
+                static if (CH>=3){ output2[0] += ( r0 * c2s ); output2[1] += ( r1 * c2s ); output2[2] += ( r2 * c2s ); output2[3] += ( r3 * c2s ); }
+                static if (CH>=4){ output3[0] += ( r0 * c3s ); output3[1] += ( r1 * c3s ); output3[2] += ( r2 * c3s ); output3[3] += ( r3 * c3s ); }
+                static if (CH>=5){ output4[0] += ( r0 * c4s ); output4[1] += ( r1 * c4s ); output4[2] += ( r2 * c4s ); output4[3] += ( r3 * c4s ); }
+                static if (CH>=6){ output5[0] += ( r0 * c5s ); output5[1] += ( r1 * c5s ); output5[2] += ( r2 * c5s ); output5[3] += ( r3 * c5s ); }
+                static if (CH>=7){ output6[0] += ( r0 * c6s ); output6[1] += ( r1 * c6s ); output6[2] += ( r2 * c6s ); output6[3] += ( r3 * c6s ); }
+                static if (CH>=8){ output7[0] += ( r0 * c7s ); output7[1] += ( r1 * c7s ); output7[2] += ( r2 * c7s ); output7[3] += ( r3 * c7s ); }
+            }
+            else
+            {
+                static if (CH>=1){ output0[0]  = ( r0 * c0s ); output0[1]  = ( r1 * c0s ); output0[2]  = ( r2 * c0s ); output0[3]  = ( r3 * c0s ); }
+                static if (CH>=2){ output1[0]  = ( r0 * c1s ); output1[1]  = ( r1 * c1s ); output1[2]  = ( r2 * c1s ); output1[3]  = ( r3 * c1s ); }
+                static if (CH>=3){ output2[0]  = ( r0 * c2s ); output2[1]  = ( r1 * c2s ); output2[2]  = ( r2 * c2s ); output2[3]  = ( r3 * c2s ); }
+                static if (CH>=4){ output3[0]  = ( r0 * c3s ); output3[1]  = ( r1 * c3s ); output3[2]  = ( r2 * c3s ); output3[3]  = ( r3 * c3s ); }
+                static if (CH>=5){ output4[0]  = ( r0 * c4s ); output4[1]  = ( r1 * c4s ); output4[2]  = ( r2 * c4s ); output4[3]  = ( r3 * c4s ); }
+                static if (CH>=6){ output5[0]  = ( r0 * c5s ); output5[1]  = ( r1 * c5s ); output5[2]  = ( r2 * c5s ); output5[3]  = ( r3 * c5s ); }
+                static if (CH>=7){ output6[0]  = ( r0 * c6s ); output6[1]  = ( r1 * c6s ); output6[2]  = ( r2 * c6s ); output6[3]  = ( r3 * c6s ); }
+                static if (CH>=8){ output7[0]  = ( r0 * c7s ); output7[1]  = ( r1 * c7s ); output7[2]  = ( r2 * c7s ); output7[3]  = ( r3 * c7s ); }
+            }
+
+            input += 4;
+            static if (CH>=1){ output0 += 4; }
+            static if (CH>=2){ output1 += 4; }
+            static if (CH>=3){ output2 += 4; }
+            static if (CH>=4){ output3 += 4; }
+            static if (CH>=5){ output4 += 4; }
+            static if (CH>=6){ output5 += 4; }
+            static if (CH>=7){ output6 += 4; }
+            static if (CH>=8){ output7 += 4; }
+        }
+    }
+
+    while ( input < input_end )
+    {
+        float r = input[0];
+        STBIR_NO_UNROLL(output0);
+
+        static if (H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+        {
+            static if (CH>=1){ output0[0] += ( r * c0s ); }
+            static if (CH>=2){ output1[0] += ( r * c1s ); }
+            static if (CH>=3){ output2[0] += ( r * c2s ); }
+            static if (CH>=4){ output3[0] += ( r * c3s ); }
+            static if (CH>=5){ output4[0] += ( r * c4s ); }
+            static if (CH>=6){ output5[0] += ( r * c5s ); }
+            static if (CH>=7){ output6[0] += ( r * c6s ); }
+            static if (CH>=8){ output7[0] += ( r * c7s ); }
+        }
+        else
+        {
+            static if (CH>=1){ output0[0]  = ( r * c0s ); }
+            static if (CH>=2){ output1[0]  = ( r * c1s ); }
+            static if (CH>=3){ output2[0]  = ( r * c2s ); }
+            static if (CH>=4){ output3[0]  = ( r * c3s ); }
+            static if (CH>=5){ output4[0]  = ( r * c4s ); }
+            static if (CH>=6){ output5[0]  = ( r * c5s ); }
+            static if (CH>=7){ output6[0]  = ( r * c6s ); }
+            static if (CH>=8){ output7[0]  = ( r * c7s ); }
+        }
+
+        ++input;
+        static if (CH>=1){ ++output0; }
+        static if (CH>=2){ ++output1; }
+        static if (CH>=3){ ++output2; }
+        static if (CH>=4){ ++output3; }
+        static if (CH>=5){ ++output4; }
+        static if (CH>=6){ ++output5; }
+        static if (CH>=7){ ++output6; }
+        static if (CH>=8){ ++output7; }
+    }
+}
+
+alias stbir__vertical_gather_with_1_coeffs = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(1));
+alias stbir__vertical_gather_with_1_coeffs_cont = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(1, true));
+alias stbir__vertical_gather_with_2_coeffs = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(2));
+alias stbir__vertical_gather_with_2_coeffs_cont = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(2, true));
+alias stbir__vertical_gather_with_3_coeffs = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(3));
+alias stbir__vertical_gather_with_3_coeffs_cont = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(3, true));
+alias stbir__vertical_gather_with_4_coeffs = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(4));
+alias stbir__vertical_gather_with_4_coeffs_cont = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(4, true));
+alias stbir__vertical_gather_with_5_coeffs = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(5));
+alias stbir__vertical_gather_with_5_coeffs_cont = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(5, true));
+alias stbir__vertical_gather_with_6_coeffs = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(6));
+alias stbir__vertical_gather_with_6_coeffs_cont = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(6, true));
+alias stbir__vertical_gather_with_7_coeffs = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(7));
+alias stbir__vertical_gather_with_7_coeffs_cont = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(7, true));
+alias stbir__vertical_gather_with_8_coeffs = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(8));
+alias stbir__vertical_gather_with_8_coeffs_cont = stbir__vertical_gather_with_N_coeffs!(stbir_vert_helper(8, true));
+
+
+void stbir__vertical_gather_with_N_coeffs(stbir_vert_helper H)(
+                                                               float * outputp, 
+                                                               const(float)* vertical_coefficients, 
+                                                               const(float)** inputs, 
+                                                               const(float)* input0_end )
+@system
+{
+    @restrict float* output = outputp;
+    enum CH = H.ch;
+
+    static if (CH>=1){ const(float)* input0 = inputs[0]; float c0s = vertical_coefficients[0]; }
+    static if (CH>=2){ const(float)* input1 = inputs[1]; float c1s = vertical_coefficients[1]; }
+    static if (CH>=3){ const(float)* input2 = inputs[2]; float c2s = vertical_coefficients[2]; }
+    static if (CH>=4){ const(float)* input3 = inputs[3]; float c3s = vertical_coefficients[3]; }
+    static if (CH>=5){ const(float)* input4 = inputs[4]; float c4s = vertical_coefficients[4]; }
+    static if (CH>=6){ const(float)* input5 = inputs[5]; float c5s = vertical_coefficients[5]; }
+    static if (CH>=7){ const(float)* input6 = inputs[6]; float c6s = vertical_coefficients[6]; }
+    static if (CH>=8){ const(float)* input7 = inputs[7]; float c7s = vertical_coefficients[7]; }
+
+    static if ((CH == 1) && !H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+    {
+        STBIR_MEMCPY( output, input0, cast(char*)input0_end - cast(char*)input0 );
+        return;
+    }
+    else
+    {
+        enum bool USE_SIMD = true;
+
+        static if (USE_SIMD) // SIMD sampler
+        {  
+            static if (CH>=1){ stbir__simdfX c0 = stbir__simdf_frepX( c0s ); }
+            static if (CH>=2){ stbir__simdfX c1 = stbir__simdf_frepX( c1s ); }
+            static if (CH>=3){ stbir__simdfX c2 = stbir__simdf_frepX( c2s ); }
+            static if (CH>=4){ stbir__simdfX c3 = stbir__simdf_frepX( c3s ); }
+            static if (CH>=5){ stbir__simdfX c4 = stbir__simdf_frepX( c4s ); }
+            static if (CH>=6){ stbir__simdfX c5 = stbir__simdf_frepX( c5s ); }
+            static if (CH>=7){ stbir__simdfX c6 = stbir__simdf_frepX( c6s ); }
+            static if (CH>=8){ stbir__simdfX c7 = stbir__simdf_frepX( c7s ); }
+
+            while ( ( cast(char*)input0_end - cast(char*) input0 ) >= (16*stbir__simdfX_float_count) )
+            {
+                stbir__simdfX o0, o1, o2, o3, r0, r1, r2, r3;
+                STBIR_SIMD_NO_UNROLL(output);
+
+                // prefetch four loop iterations ahead (doesn't affect much for small resizes, but helps with big ones)
+                static if (CH>=1){ stbir__prefetch( input0 + (16*stbir__simdfX_float_count) ); }
+                static if (CH>=2){ stbir__prefetch( input1 + (16*stbir__simdfX_float_count) ); }
+                static if (CH>=3){ stbir__prefetch( input2 + (16*stbir__simdfX_float_count) ); }
+                static if (CH>=4){ stbir__prefetch( input3 + (16*stbir__simdfX_float_count) ); }
+                static if (CH>=5){ stbir__prefetch( input4 + (16*stbir__simdfX_float_count) ); }
+                static if (CH>=6){ stbir__prefetch( input5 + (16*stbir__simdfX_float_count) ); }
+                static if (CH>=7){ stbir__prefetch( input6 + (16*stbir__simdfX_float_count) ); }
+                static if (CH>=8){ stbir__prefetch( input7 + (16*stbir__simdfX_float_count) ); }
+
+                static if (H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+                {
+                    static if (CH>=1)
+                    {
+                        stbir__simdfX_load( o0, output );      stbir__simdfX_load( o1, output+stbir__simdfX_float_count );   stbir__simdfX_load( o2, output+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( o3, output+(3*stbir__simdfX_float_count) );
+                        stbir__simdfX_load( r0, input0 );      stbir__simdfX_load( r1, input0+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input0+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input0+(3*stbir__simdfX_float_count) );
+                        stbir__simdfX_madd( o0, o0, r0, c0 );  stbir__simdfX_madd( o1, o1, r1, c0 );                         stbir__simdfX_madd( o2, o2, r2, c0 );                             stbir__simdfX_madd( o3, o3, r3, c0 ); 
+                    }
+                }
+                else
+                {
+                    static if (CH>=1)
+                    { 
+                        stbir__simdfX_load( r0, input0 );      stbir__simdfX_load( r1, input0+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input0+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input0+(3*stbir__simdfX_float_count) );
+                        stbir__simdfX_mult( o0, r0, c0 );      stbir__simdfX_mult( o1, r1, c0 );                             stbir__simdfX_mult( o2, r2, c0 );                                 stbir__simdfX_mult( o3, r3, c0 );
+                    }
+                }
+
+                static if (CH>=2){ stbir__simdfX_load( r0, input1 );      stbir__simdfX_load( r1, input1+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input1+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input1+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c1 );  stbir__simdfX_madd( o1, o1, r1, c1 );                         stbir__simdfX_madd( o2, o2, r2, c1 );                             stbir__simdfX_madd( o3, o3, r3, c1 ); }
+                static if (CH>=3){ stbir__simdfX_load( r0, input2 );      stbir__simdfX_load( r1, input2+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input2+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input2+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c2 );  stbir__simdfX_madd( o1, o1, r1, c2 );                         stbir__simdfX_madd( o2, o2, r2, c2 );                             stbir__simdfX_madd( o3, o3, r3, c2 ); }
+                static if (CH>=4){ stbir__simdfX_load( r0, input3 );      stbir__simdfX_load( r1, input3+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input3+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input3+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c3 );  stbir__simdfX_madd( o1, o1, r1, c3 );                         stbir__simdfX_madd( o2, o2, r2, c3 );                             stbir__simdfX_madd( o3, o3, r3, c3 ); }
+                static if (CH>=5){ stbir__simdfX_load( r0, input4 );      stbir__simdfX_load( r1, input4+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input4+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input4+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c4 );  stbir__simdfX_madd( o1, o1, r1, c4 );                         stbir__simdfX_madd( o2, o2, r2, c4 );                             stbir__simdfX_madd( o3, o3, r3, c4 ); }
+                static if (CH>=6){ stbir__simdfX_load( r0, input5 );      stbir__simdfX_load( r1, input5+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input5+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input5+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c5 );  stbir__simdfX_madd( o1, o1, r1, c5 );                         stbir__simdfX_madd( o2, o2, r2, c5 );                             stbir__simdfX_madd( o3, o3, r3, c5 ); }
+                static if (CH>=7){ stbir__simdfX_load( r0, input6 );      stbir__simdfX_load( r1, input6+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input6+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input6+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c6 );  stbir__simdfX_madd( o1, o1, r1, c6 );                         stbir__simdfX_madd( o2, o2, r2, c6 );                             stbir__simdfX_madd( o3, o3, r3, c6 ); }
+                static if (CH>=8){ stbir__simdfX_load( r0, input7 );      stbir__simdfX_load( r1, input7+stbir__simdfX_float_count );   stbir__simdfX_load( r2, input7+(2*stbir__simdfX_float_count) );   stbir__simdfX_load( r3, input7+(3*stbir__simdfX_float_count) );
+                stbir__simdfX_madd( o0, o0, r0, c7 );  stbir__simdfX_madd( o1, o1, r1, c7 );                         stbir__simdfX_madd( o2, o2, r2, c7 );                             stbir__simdfX_madd( o3, o3, r3, c7 ); }
+
+                stbir__simdfX_store( output, o0 );             stbir__simdfX_store( output+stbir__simdfX_float_count, o1 );  stbir__simdfX_store( output+(2*stbir__simdfX_float_count), o2 );  stbir__simdfX_store( output+(3*stbir__simdfX_float_count), o3 );
+                output += (4*stbir__simdfX_float_count);
+                static if (CH>=1){ input0 += (4*stbir__simdfX_float_count); }
+                static if (CH>=2){ input1 += (4*stbir__simdfX_float_count); }
+                static if (CH>=3){ input2 += (4*stbir__simdfX_float_count); }
+                static if (CH>=4){ input3 += (4*stbir__simdfX_float_count); }
+                static if (CH>=5){ input4 += (4*stbir__simdfX_float_count); }
+                static if (CH>=6){ input5 += (4*stbir__simdfX_float_count); }
+                static if (CH>=7){ input6 += (4*stbir__simdfX_float_count); }
+                static if (CH>=8){ input7 += (4*stbir__simdfX_float_count); }
+            }
+
+            while ( ( cast(char*)input0_end - cast(char*) input0 ) >= 16 )
+            {
+                stbir__simdf o0, r0;
+                STBIR_SIMD_NO_UNROLL(output);
+
+                static if (H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+                {
+                    static if (CH>=1)
+                    {
+                        stbir__simdf_load( o0, output );   stbir__simdf_load( r0, input0 ); stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c0 ) ); 
+                    }
+                }
+                else
+                {
+                    static if (CH>=1)
+                    {
+                        stbir__simdf_load( r0, input0 );  stbir__simdf_mult( o0, r0, stbir__if_simdf8_cast_to_simdf4( c0 ) );
+                    }
+                }
+
+                static if (CH>=2){ stbir__simdf_load( r0, input1 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c1 ) ); }
+                static if (CH>=3){ stbir__simdf_load( r0, input2 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c2 ) ); }
+                static if (CH>=4){ stbir__simdf_load( r0, input3 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c3 ) ); }
+                static if (CH>=5){ stbir__simdf_load( r0, input4 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c4 ) ); }
+                static if (CH>=6){ stbir__simdf_load( r0, input5 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c5 ) ); }
+                static if (CH>=7){ stbir__simdf_load( r0, input6 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c6 ) ); }
+                static if (CH>=8){ stbir__simdf_load( r0, input7 );  stbir__simdf_madd( o0, o0, r0, stbir__if_simdf8_cast_to_simdf4( c7 ) ); }
+
+                stbir__simdf_store( output, o0 );
+                output += 4;
+                static if (CH>=1){ input0 += 4; }
+                static if (CH>=2){ input1 += 4; }
+                static if (CH>=3){ input2 += 4; }
+                static if (CH>=4){ input3 += 4; }
+                static if (CH>=5){ input4 += 4; }
+                static if (CH>=6){ input5 += 4; }
+                static if (CH>=7){ input6 += 4; }
+                static if (CH>=8){ input7 += 4; }
+            }
+        } 
+        else // no SIMD
+        {
+            while ( ( cast(char*)input0_end - cast(char*) input0 ) >= 16 )
+            {
+                float o0, o1, o2, o3;
+                STBIR_NO_UNROLL(output);
+
+                static if (H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+                {
+                    static if (CH>=1){ o0 = output[0] + input0[0] * c0s; o1 = output[1] + input0[1] * c0s; o2 = output[2] + input0[2] * c0s; o3 = output[3] + input0[3] * c0s; }
+                }
+                else
+                {
+                    static if (CH>=1){ o0  = input0[0] * c0s; o1  = input0[1] * c0s; o2  = input0[2] * c0s; o3  = input0[3] * c0s; }
+                }
+
+                static if (CH>=2){ o0 += input1[0] * c1s; o1 += input1[1] * c1s; o2 += input1[2] * c1s; o3 += input1[3] * c1s; }
+                static if (CH>=3){ o0 += input2[0] * c2s; o1 += input2[1] * c2s; o2 += input2[2] * c2s; o3 += input2[3] * c2s; }
+                static if (CH>=4){ o0 += input3[0] * c3s; o1 += input3[1] * c3s; o2 += input3[2] * c3s; o3 += input3[3] * c3s; }
+                static if (CH>=5){ o0 += input4[0] * c4s; o1 += input4[1] * c4s; o2 += input4[2] * c4s; o3 += input4[3] * c4s; }
+                static if (CH>=6){ o0 += input5[0] * c5s; o1 += input5[1] * c5s; o2 += input5[2] * c5s; o3 += input5[3] * c5s; }
+                static if (CH>=7){ o0 += input6[0] * c6s; o1 += input6[1] * c6s; o2 += input6[2] * c6s; o3 += input6[3] * c6s; }
+                static if (CH>=8){ o0 += input7[0] * c7s; o1 += input7[1] * c7s; o2 += input7[2] * c7s; o3 += input7[3] * c7s; }
+                output[0] = o0; output[1] = o1; output[2] = o2; output[3] = o3;
+                output += 4;
+                static if (CH>=1){ input0 += 4; }
+                static if (CH>=2){ input1 += 4; }
+                static if (CH>=3){ input2 += 4; }
+                static if (CH>=4){ input3 += 4; }
+                static if (CH>=5){ input4 += 4; }
+                static if (CH>=6){ input5 += 4; }
+                static if (CH>=7){ input6 += 4; }
+                static if (CH>=8){ input7 += 4; }
+            }
+        }
+
+        while ( input0 < input0_end )
+        {
+            float o0;
+            STBIR_NO_UNROLL(output);
+            static if (H.STB_IMAGE_RESIZE_VERTICAL_CONTINUE)
+            {
+                static if (CH>=1){ o0 = output[0] + input0[0] * c0s; }
+            }
+            else
+            {
+                static if (CH>=1){ o0  = input0[0] * c0s; }
+            }
+            static if (CH>=2){ o0 += input1[0] * c1s; }
+            static if (CH>=3){ o0 += input2[0] * c2s; }
+            static if (CH>=4){ o0 += input3[0] * c3s; }
+            static if (CH>=5){ o0 += input4[0] * c4s; }
+            static if (CH>=6){ o0 += input5[0] * c5s; }
+            static if (CH>=7){ o0 += input6[0] * c6s; }
+            static if (CH>=8){ o0 += input7[0] * c7s; }
+            output[0] = o0;
+            ++output;
+            static if (CH>=1){ ++input0; }
+            static if (CH>=2){ ++input1; }
+            static if (CH>=3){ ++input2; }
+            static if (CH>=4){ ++input3; }
+            static if (CH>=5){ ++input4; }
+            static if (CH>=6){ ++input5; }
+            static if (CH>=7){ ++input6; }
+            static if (CH>=8){ ++input7; }
+        }
+    }
+}
+
+// HORIZONTAL RESAMPLING
+
+struct stbir_horz_helper
+{
+    int channels;
+    alias STBIR__horizontal_channels = channels;
+
+    string stbir__1_coeff_only;
+    string stbir__2_coeff_only;
+    string stbir__3_coeff_only;
+    string stbir__store_output_tiny;
+    string stbir__4_coeff_start;
+    string stbir__4_coeff_continue_from_4;
+    string stbir__1_coeff_remnant;
+    string stbir__2_coeff_remnant;
+    string stbir__3_coeff_setup;
+    string stbir__3_coeff_remnant;
+    string stbir__store_output;
+}
+
+
+void stbir__horizontal_gather_N_channels_with_1_coeff(stbir_horz_helper h)
+(float * output_buffer, uint output_sub_size, const(float)* decode_buffer,
+ const(stbir__contributors)* horizontal_contributors,
+ const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float* output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__1_coeff_only);
+        mixin(h.stbir__store_output_tiny);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_2_coeffs(stbir_horz_helper h)
+(float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__2_coeff_only);
+        mixin(h.stbir__store_output_tiny);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_3_coeffs(stbir_horz_helper h)
+(float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__3_coeff_only);
+        mixin(h.stbir__store_output_tiny);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_4_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__4_coeff_start);
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_5_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__4_coeff_start);
+        {
+            int ofs = 4;
+            mixin(h.stbir__1_coeff_remnant);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_6_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__4_coeff_start);
+        {
+            int ofs = 4;
+            mixin(h.stbir__2_coeff_remnant);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_7_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    mixin(h.stbir__3_coeff_setup);
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+
+        mixin(h.stbir__4_coeff_start);
+        {
+            int ofs = 4;
+            mixin(h.stbir__3_coeff_remnant);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_8_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__4_coeff_start);
+        {
+            int ofs = 4;
+            mixin(h.stbir__4_coeff_continue_from_4);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_9_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__4_coeff_start);
+        {
+            int ofs = 4;
+            mixin(h.stbir__4_coeff_continue_from_4);
+        }
+        {
+            int ofs = 8;
+            mixin(h.stbir__1_coeff_remnant);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_10_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__4_coeff_start);
+        {
+            int ofs = 4;
+            mixin(h.stbir__4_coeff_continue_from_4);
+        }
+        {
+            int ofs = 8;
+            mixin(h.stbir__2_coeff_remnant);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_11_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    mixin(h.stbir__3_coeff_setup);
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__4_coeff_start);
+        {
+            int ofs = 4;
+            mixin(h.stbir__4_coeff_continue_from_4);
+        }
+        {
+            int ofs = 8;
+            mixin(h.stbir__3_coeff_remnant);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_12_coeffs(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        const(float)* hc = horizontal_coefficients;
+        mixin(h.stbir__4_coeff_start);
+        {
+            int ofs = 4;
+            mixin(h.stbir__4_coeff_continue_from_4);
+        }
+        {
+            int ofs = 8;
+            mixin(h.stbir__4_coeff_continue_from_4);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_n_coeffs_mod0(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        int n = ( ( horizontal_contributors.n1 - horizontal_contributors.n0 + 1 ) - 4 + 3 ) >> 2;
+        const(float)* hc = horizontal_coefficients;
+
+        mixin(h.stbir__4_coeff_start);
+        do {
+            hc += 4;
+            decode += h.channels * 4;
+            int ofs = 0;
+            mixin(h.stbir__4_coeff_continue_from_4);
+            --n;
+        } while ( n > 0 );
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_n_coeffs_mod1(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        int n = ( ( horizontal_contributors.n1 - horizontal_contributors.n0 + 1 ) - 5 + 3 ) >> 2;
+        const(float)* hc = horizontal_coefficients;
+
+        mixin(h.stbir__4_coeff_start);
+        do {
+            hc += 4;
+            decode += h.channels * 4;
+            int ofs = 0;
+            mixin(h.stbir__4_coeff_continue_from_4);
+            --n;
+        } while ( n > 0 );
+        {
+            int ofs = 4;
+            mixin(h.stbir__1_coeff_remnant);
+        }
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_n_coeffs_mod2(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        int n = ( ( horizontal_contributors.n1 - horizontal_contributors.n0 + 1 ) - 6 + 3 ) >> 2;
+        const(float)* hc = horizontal_coefficients;
+
+        mixin(h.stbir__4_coeff_start);
+        do {
+            hc += 4;
+            decode += h.channels * 4;
+            int ofs = 0;
+            mixin(h.stbir__4_coeff_continue_from_4);
+            --n;
+        } while ( n > 0 );
+
+        {
+            int ofs = 4;
+            mixin(h.stbir__2_coeff_remnant);
+        }
+
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+void stbir__horizontal_gather_N_channels_with_n_coeffs_mod3(stbir_horz_helper h)
+( float * output_buffer, uint output_sub_size, const(float)* decode_buffer, const(stbir__contributors)* horizontal_contributors, const(float)* horizontal_coefficients, int coefficient_width )
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * h.channels;
+    @restrict float*  output = output_buffer;
+    mixin(h.stbir__3_coeff_setup);
+    do {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * h.channels;
+        int n = ( ( horizontal_contributors.n1 - horizontal_contributors.n0 + 1 ) - 7 + 3 ) >> 2;
+        const(float)* hc = horizontal_coefficients;
+
+        mixin(h.stbir__4_coeff_start);
+        do {
+            hc += 4;
+            decode += h.channels * 4;
+            int ofs = 0;
+            mixin(h.stbir__4_coeff_continue_from_4);
+            --n;
+        } while ( n > 0 );
+        {
+            int ofs = 4;
+            mixin(h.stbir__3_coeff_remnant);
+        }
+
+        mixin(h.stbir__store_output);
+    } while ( output < output_end );
+}
+
+static immutable stbir__horizontal_gather_channels_func[4]
+stbir__horizontal_gather_N_channels_with_n_coeffs_funcs(stbir_horz_helper h) =
+[
+    &stbir__horizontal_gather_N_channels_with_n_coeffs_mod0!h,
+    &stbir__horizontal_gather_N_channels_with_n_coeffs_mod1!h,
+    &stbir__horizontal_gather_N_channels_with_n_coeffs_mod2!h,
+    &stbir__horizontal_gather_N_channels_with_n_coeffs_mod3!h,
+];
+
+version(LDC)
+{
+    version(X86)
+        // Technically the bug was only seen with 7 channels but
+        // better be safe.
+        enum bool STBIR2_workaround_Issue1 = true;
+    else
+        enum bool STBIR2_workaround_Issue1 = false;
+}
+else
+enum bool STBIR2_workaround_Issue1 = true;
+
+static if (STBIR2_workaround_Issue1)
+{
+    // See: https://github.com/AuburnSounds/stb_image_resize2-d/issues/1
+    // To avoid a x86 crash, use the generic function. It is 6% slower
+    // saves 6kb in binary, and doesn't crash in these conditions.
+    static immutable stbir__horizontal_gather_channels_func[12]
+        stbir__horizontal_gather_N_channels_funcs(stbir_horz_helper h) =
+    [
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(1, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(2, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(3, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(4, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(5, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(6, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(7, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(8, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(9, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(10, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(11, h.channels),
+        &stbir__horizontal_gather_N_channels_with_n_coeffs_any!(12, h.channels),
+    ];
+}
+else
+{
+    static immutable stbir__horizontal_gather_channels_func[12]
+        stbir__horizontal_gather_N_channels_funcs(stbir_horz_helper h) =
+    [
+        &stbir__horizontal_gather_N_channels_with_1_coeff!h,
+        &stbir__horizontal_gather_N_channels_with_2_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_3_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_4_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_5_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_6_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_7_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_8_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_9_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_10_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_11_coeffs!h,
+        &stbir__horizontal_gather_N_channels_with_12_coeffs!h,
+    ];
+}
+
+static immutable stbir__horizontal_gather_channels_func*[8] stbir__horizontal_gather_n_coeffs_funcs =
+[
+    null,
+    stbir__horizontal_gather_N_channels_with_n_coeffs_funcs!stbir_horz_helper_1ch.ptr,
+    stbir__horizontal_gather_N_channels_with_n_coeffs_funcs!stbir_horz_helper_2ch.ptr,
+    stbir__horizontal_gather_N_channels_with_n_coeffs_funcs!stbir_horz_helper_3ch.ptr,
+    stbir__horizontal_gather_N_channels_with_n_coeffs_funcs!stbir_horz_helper_4ch.ptr,
+    null,
+    null,
+    stbir__horizontal_gather_N_channels_with_n_coeffs_funcs!stbir_horz_helper_7ch.ptr
+];
+
+static immutable stbir__horizontal_gather_channels_func[][8] stbir__horizontal_gather_channels_funcs =
+[
+    null,
+    stbir__horizontal_gather_N_channels_funcs!stbir_horz_helper_1ch,
+    stbir__horizontal_gather_N_channels_funcs!stbir_horz_helper_2ch,
+    stbir__horizontal_gather_N_channels_funcs!stbir_horz_helper_3ch,
+    stbir__horizontal_gather_N_channels_funcs!stbir_horz_helper_4ch,
+    null,
+    null,
+    stbir__horizontal_gather_N_channels_funcs!stbir_horz_helper_7ch
+];
+
+
+
+
+//=================
+// Do 1 channel horizontal routine
+
+
+enum stbir_horz_helper_1ch = stbir_horz_helper
+(
+ 1,
+
+ // stbir__1_coeff_only
+ `stbir__simdf tot,c;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load1( c, hc );
+ stbir__simdf_mult1_mem( tot, c, decode );`,
+
+ // stbir__2_coeff_only
+ `stbir__simdf tot,c,d;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load2z( c, hc );
+ stbir__simdf_load2( d, decode );
+ stbir__simdf_mult( tot, c, d );
+ stbir__simdf_0123to1230( c, tot );
+ stbir__simdf_add1( tot, tot, c );`,
+
+ // stbir__3_coeff_only
+ `stbir__simdf tot,c,t;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load( c, hc );
+ stbir__simdf_mult_mem( tot, c, decode );
+ stbir__simdf_0123to1230( c, tot );
+ stbir__simdf_0123to2301( t, tot );
+ stbir__simdf_add1( tot, tot, c );
+ stbir__simdf_add1( tot, tot, t );`,
+
+ // stbir__store_output_tiny
+ `stbir__simdf_store1( output, tot );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 1;`,
+
+ // stbir__4_coeff_start
+ `stbir__simdf tot,c;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load( c, hc );
+ stbir__simdf_mult_mem( tot, c, decode );`,
+
+ // stbir__4_coeff_continue_from_4
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load( c, hc + (ofs) );
+ stbir__simdf_madd_mem( tot, tot, c, decode+(ofs) );`,
+
+ // stbir__1_coeff_remnant
+ `{ stbir__simdf d;
+ stbir__simdf_load1z( c, hc + (ofs) );
+ stbir__simdf_load1( d, decode + (ofs) );
+ stbir__simdf_madd( tot, tot, d, c ); }`,
+
+ // stbir__2_coeff_remnant
+ `{ stbir__simdf d;
+ stbir__simdf_load2z( c, hc+(ofs) );
+ stbir__simdf_load2( d, decode+(ofs) );
+ stbir__simdf_madd( tot, tot, d, c ); }`,
+
+ // stbir__3_coeff_setup
+ `stbir__simdf mask;
+ stbir__simdf_load( mask, STBIR_mask.ptr + 3 );`,
+
+ // stbir__3_coeff_remnant
+ `stbir__simdf_load( c, hc+(ofs) );
+ stbir__simdf_and( c, c, mask );
+ stbir__simdf_madd_mem( tot, tot, c, decode+(ofs) );`,
+
+ // stbir__store_output
+ `stbir__simdf_0123to2301( c, tot );
+ stbir__simdf_add( tot, tot, c );
+ stbir__simdf_0123to1230( c, tot );
+ stbir__simdf_add1( tot, tot, c );
+ stbir__simdf_store1( output, tot );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 1;`
+ );
+
+//=================
+// Do 2 channel horizontal routines
+
+enum stbir_horz_helper_2ch = stbir_horz_helper
+(
+ 2,
+
+ // stbir__1_coeff_only
+ `stbir__simdf tot,c,d;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load1z( c, hc );
+ stbir__simdf_0123to0011( c, c);
+ stbir__simdf_load2( d, decode );
+ stbir__simdf_mult( tot, d, c );`,
+
+
+ // stbir__2_coeff_only
+ `stbir__simdf tot,c;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load2( c, hc );
+ stbir__simdf_0123to0011( c, c );
+ stbir__simdf_mult_mem( tot, c, decode );`,
+
+ // stbir__3_coeff_only
+ `stbir__simdf tot,c,cs,d;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load( cs, hc );
+ stbir__simdf_0123to0011( c, cs );
+ stbir__simdf_mult_mem( tot, c, decode );
+ stbir__simdf_0123to2222( c, cs );
+ stbir__simdf_load2z( d, decode+4 );
+ stbir__simdf_madd( tot, tot, d, c );`,
+
+ // stbir__store_output_tiny
+ `stbir__simdf_0123to2301( c, tot );
+ stbir__simdf_add( tot, tot, c );
+ stbir__simdf_store2( output, tot );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 2;`,
+
+ // stbir__4_coeff_start
+ `stbir__simdf8 tot0,c,cs;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc );
+ stbir__simdf8_0123to00112233( c, cs );
+ stbir__simdf8_mult_mem( tot0, c, decode );`,
+
+ // stbir__4_coeff_continue_from_4
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) );
+ stbir__simdf8_0123to00112233( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*2 );`,
+
+ // stbir__1_coeff_remnant
+ `{ stbir__simdf t;
+ stbir__simdf_load1z( t, hc + (ofs) );
+ stbir__simdf_0123to0011( t, t );
+ stbir__simdf_mult_mem( t, t, decode+(ofs)*2 );
+ stbir__simdf8_add4( tot0, tot0, t ); }`,
+
+ // stbir__2_coeff_remnant
+ `{ stbir__simdf t;
+ stbir__simdf_load2( t, hc + (ofs) );
+ stbir__simdf_0123to0011( t, t );
+ stbir__simdf_mult_mem( t, t, decode+(ofs)*2 );
+ stbir__simdf8_add4( tot0, tot0, t ); }`,
+
+
+ // stbir__3_coeff_setup
+ ``,
+
+ // stbir__3_coeff_remnant
+ `{ stbir__simdf8 d;
+ stbir__simdf8_load4b( cs, hc + (ofs) );
+ stbir__simdf8_0123to00112233( c, cs );
+ stbir__simdf8_load6z( d, decode+(ofs)*2 );
+ stbir__simdf8_madd( tot0, tot0, c, d ); }`,
+
+ // stbir__store_output
+ `{ stbir__simdf t,d;
+ stbir__simdf8_add4halves( t, stbir__if_simdf8_cast_to_simdf4(tot0), tot0 );
+ stbir__simdf_0123to2301( d, t );
+ stbir__simdf_add( t, t, d );
+ stbir__simdf_store2( output, t );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 2; }`
+ );
+
+
+
+//=================
+// Do 3 channel horizontal routines
+
+enum stbir_horz_helper_3ch = stbir_horz_helper
+(
+ 3,
+
+ // stbir__1_coeff_only
+ `stbir__simdf tot,c,d;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load1z( c, hc );
+ stbir__simdf_0123to0001( c, c );
+ stbir__simdf_load( d, decode );
+ stbir__simdf_mult( tot, d, c );`,
+
+
+ // stbir__2_coeff_only
+ `stbir__simdf tot,c,cs,d;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load2( cs, hc );
+ stbir__simdf_0123to0000( c, cs );
+ stbir__simdf_load( d, decode );
+ stbir__simdf_mult( tot, d, c );
+ stbir__simdf_0123to1111( c, cs );
+ stbir__simdf_load( d, decode+3 );
+ stbir__simdf_madd( tot, tot, d, c );`,
+
+ // stbir__3_coeff_only
+ `stbir__simdf tot,c,d,cs;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load( cs, hc );
+ stbir__simdf_0123to0000( c, cs );
+ stbir__simdf_load( d, decode );
+ stbir__simdf_mult( tot, d, c );
+ stbir__simdf_0123to1111( c, cs );
+ stbir__simdf_load( d, decode+3 );
+ stbir__simdf_madd( tot, tot, d, c );
+ stbir__simdf_0123to2222( c, cs );
+ stbir__simdf_load( d, decode+6 );
+ stbir__simdf_madd( tot, tot, d, c );`,
+
+ // stbir__store_output_tiny
+ `stbir__simdf_store2( output, tot );
+ stbir__simdf_0123to2301( tot, tot );
+ stbir__simdf_store1( output+2, tot );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 3;`,
+
+ // we're loading from the XXXYYY decode by -1 to get the XXXYYY into different halves of the AVX reg fyi
+
+ // stbir__4_coeff_start
+ `stbir__simdf8 tot0,tot1,c,cs; stbir__simdf t;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc );
+ stbir__simdf8_0123to00001111( c, cs );
+ stbir__simdf8_mult_mem( tot0, c, decode - 1 );
+ stbir__simdf8_0123to22223333( c, cs );
+ stbir__simdf8_mult_mem( tot1, c, decode+6 - 1 );`,
+
+
+ // stbir__4_coeff_continue_from_4
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) );
+ stbir__simdf8_0123to00001111( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*3 - 1 );
+ stbir__simdf8_0123to22223333( c, cs );
+ stbir__simdf8_madd_mem( tot1, tot1, c, decode+(ofs)*3 + 6 - 1 );`,
+
+ // stbir__1_coeff_remnant
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load1rep4( t, hc + (ofs) );
+ stbir__simdf8_madd_mem4( tot0, tot0, t, decode+(ofs)*3 - 1 );`,
+
+ // stbir__2_coeff_remnant
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) - 2 );
+ stbir__simdf8_0123to22223333( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*3 - 1 );`,
+
+ // stbir__3_coeff_setup
+ ``,
+
+ // stbir__3_coeff_remnant
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) );
+ stbir__simdf8_0123to00001111( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*3 - 1 );
+ stbir__simdf8_0123to2222( t, cs );
+ stbir__simdf8_madd_mem4( tot1, tot1, t, decode+(ofs)*3 + 6 - 1 );`,
+
+ // stbir__store_output
+ `stbir__simdf8_add( tot0, tot0, tot1 );
+ stbir__simdf_0123to1230( t, stbir__if_simdf8_cast_to_simdf4( tot0 ) );
+ stbir__simdf8_add4halves( t, t, tot0 );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 3;
+ if ( output < output_end )
+ {
+ stbir__simdf_store( output-3, t );
+ continue;
+ }
+ { stbir__simdf tt; stbir__simdf_0123to2301( tt, t );
+ stbir__simdf_store2( output-3, t );
+ stbir__simdf_store1( output+2-3, tt ); }
+ break;`
+ );
+
+
+//=================
+// Do 4 channel horizontal routines
+
+enum stbir_horz_helper_4ch = stbir_horz_helper
+(
+ 4,
+
+ // stbir__1_coeff_only
+ `stbir__simdf tot,c;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load1( c, hc );
+ stbir__simdf_0123to0000( c, c );
+ stbir__simdf_mult_mem( tot, c, decode );`,
+
+
+ // stbir__2_coeff_only
+ `stbir__simdf tot,c,cs;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load2( cs, hc );
+ stbir__simdf_0123to0000( c, cs );
+ stbir__simdf_mult_mem( tot, c, decode );
+ stbir__simdf_0123to1111( c, cs );
+ stbir__simdf_madd_mem( tot, tot, c, decode+4 );`,
+
+ // stbir__3_coeff_only
+ `stbir__simdf tot,c,cs;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load( cs, hc );
+ stbir__simdf_0123to0000( c, cs );
+ stbir__simdf_mult_mem( tot, c, decode );
+ stbir__simdf_0123to1111( c, cs );
+ stbir__simdf_madd_mem( tot, tot, c, decode+4 );
+ stbir__simdf_0123to2222( c, cs );
+ stbir__simdf_madd_mem( tot, tot, c, decode+8 );`,
+
+ // stbir__store_output_tiny
+ `stbir__simdf_store( output, tot );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 4;`,
+
+ // stbir__4_coeff_start
+ `stbir__simdf8 tot0,c,cs; stbir__simdf t;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc );
+ stbir__simdf8_0123to00001111( c, cs );
+ stbir__simdf8_mult_mem( tot0, c, decode );
+ stbir__simdf8_0123to22223333( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+8 );`,
+
+
+ // stbir__4_coeff_continue_from_4
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) );
+ stbir__simdf8_0123to00001111( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*4 );
+ stbir__simdf8_0123to22223333( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*4+8 );`,
+
+
+ // stbir__1_coeff_remnant
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load1rep4( t, hc + (ofs) );
+ stbir__simdf8_madd_mem4( tot0, tot0, t, decode+(ofs)*4 );`,
+
+
+ // stbir__2_coeff_remnant
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) - 2 );
+ stbir__simdf8_0123to22223333( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*4 );`,
+
+
+ // stbir__3_coeff_setup
+ "",
+
+ // stbir__3_coeff_remnant
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) );
+ stbir__simdf8_0123to00001111( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*4 );
+ stbir__simdf8_0123to2222( t, cs );
+ stbir__simdf8_madd_mem4( tot0, tot0, t, decode+(ofs)*4+8 );`,
+
+ // stbir__store_output
+ `stbir__simdf8_add4halves( t, stbir__if_simdf8_cast_to_simdf4(tot0), tot0 );
+ stbir__simdf_store( output, t );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 4;`,
+ );
+
+
+//=================
+// Do 7 channel horizontal routines
+
+enum stbir_horz_helper_7ch = stbir_horz_helper
+(
+ 7,
+
+ `stbir__simdf tot0,tot1,c;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load1( c, hc );
+ stbir__simdf_0123to0000( c, c );
+ stbir__simdf_mult_mem( tot0, c, decode );
+ stbir__simdf_mult_mem( tot1, c, decode+3 );`,
+
+ `stbir__simdf tot0,tot1,c,cs;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load2( cs, hc );
+ stbir__simdf_0123to0000( c, cs );
+ stbir__simdf_mult_mem( tot0, c, decode );
+ stbir__simdf_mult_mem( tot1, c, decode+3 );
+ stbir__simdf_0123to1111( c, cs );
+ stbir__simdf_madd_mem( tot0, tot0, c, decode+7 );
+ stbir__simdf_madd_mem( tot1, tot1, c,decode+10 );`,
+
+ `stbir__simdf tot0,tot1,c,cs;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf_load( cs, hc );
+ stbir__simdf_0123to0000( c, cs );
+ stbir__simdf_mult_mem( tot0, c, decode );
+ stbir__simdf_mult_mem( tot1, c, decode+3 );
+ stbir__simdf_0123to1111( c, cs );
+ stbir__simdf_madd_mem( tot0, tot0, c, decode+7 );
+ stbir__simdf_madd_mem( tot1, tot1, c, decode+10 );
+ stbir__simdf_0123to2222( c, cs );
+ stbir__simdf_madd_mem( tot0, tot0, c, decode+14 );
+ stbir__simdf_madd_mem( tot1, tot1, c, decode+17 );`,
+
+ `stbir__simdf_store( output+3, tot1 );
+ stbir__simdf_store( output, tot0 );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 7;`,
+
+ `stbir__simdf8 tot0,tot1,c,cs;
+ STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc );
+ stbir__simdf8_0123to00000000( c, cs );
+ stbir__simdf8_mult_mem( tot0, c, decode );
+ stbir__simdf8_0123to11111111( c, cs );
+ stbir__simdf8_mult_mem( tot1, c, decode+7 );
+ stbir__simdf8_0123to22222222( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+14 );
+ stbir__simdf8_0123to33333333( c, cs );
+ stbir__simdf8_madd_mem( tot1, tot1, c, decode+21 );`,
+
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) );
+ stbir__simdf8_0123to00000000( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*7 );
+ stbir__simdf8_0123to11111111( c, cs );
+ stbir__simdf8_madd_mem( tot1, tot1, c, decode+(ofs)*7+7 );
+ stbir__simdf8_0123to22222222( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*7+14 );
+ stbir__simdf8_0123to33333333( c, cs );
+ stbir__simdf8_madd_mem( tot1, tot1, c, decode+(ofs)*7+21 );`,
+
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load1b( c, hc + (ofs) );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*7 );`,
+
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load1b( c, hc + (ofs) );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*7 );
+ stbir__simdf8_load1b( c, hc + (ofs)+1 );
+ stbir__simdf8_madd_mem( tot1, tot1, c, decode+(ofs)*7+7 );`,
+
+ // stbir__3_coeff_setup
+ ``,
+
+ `STBIR_SIMD_NO_UNROLL(decode);
+ stbir__simdf8_load4b( cs, hc + (ofs) );
+ stbir__simdf8_0123to00000000( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*7 );
+ stbir__simdf8_0123to11111111( c, cs );
+ stbir__simdf8_madd_mem( tot1, tot1, c, decode+(ofs)*7+7 );
+ stbir__simdf8_0123to22222222( c, cs );
+ stbir__simdf8_madd_mem( tot0, tot0, c, decode+(ofs)*7+14 );`,
+
+ `stbir__simdf8_add( tot0, tot0, tot1 );
+ horizontal_coefficients += coefficient_width;
+ ++horizontal_contributors;
+ output += 7;
+ if ( output < output_end )
+ {
+ stbir__simdf8_store( output-7, tot0 );
+ continue;
+ }
+ stbir__simdf_store( output-7+3, stbir__simdf_swiz!(0,0,1,2)(stbir__simdf8_gettop4(tot0)) );
+ stbir__simdf_store( output-7, stbir__if_simdf8_cast_to_simdf4(tot0) );
+ break;`,
+ );
+
+
+
+// GP. Super generic horizontal gather function in case of LDC + X86 + 7 channels
+// See Issue #1
+
+void stbir__horizontal_gather_N_channels_with_n_coeffs_any(int NumCoeffs, int Channels)(
+                                                                                        float * output_buffer,
+                                                                                        uint output_sub_size,
+                                                                                        const(float)* decode_buffer,
+                                                                                        const(stbir__contributors)* horizontal_contributors,
+                                                                                        const(float)* horizontal_coefficients,
+                                                                                        int coefficient_width)
+@system
+{
+    const(float)* output_end = output_buffer + output_sub_size * Channels;
+    @restrict float*  output = output_buffer;
+    do
+    {
+        const(float)* decode = decode_buffer + horizontal_contributors.n0 * Channels;
+        const(float)* hc = horizontal_coefficients;
+
+        float[Channels] accum;
+        accum[] = 0;
+
+        for (int icoeff = 0; icoeff < NumCoeffs; ++icoeff)
+        {
+            float coeff = hc[icoeff];
+            for (int ch = 0; ch < Channels; ++ch)
+            {
+                accum[ch] += coeff * decode[Channels * icoeff + ch];
+            }
+        }
+
+        for (int ch = 0; ch < Channels; ++ch)
+        {
+            output[ch] = accum[ch];
+        }
+
+        horizontal_coefficients += coefficient_width;
+        ++horizontal_contributors;
+        output += Channels;
+    } while ( output < output_end );
+}
+
+
+
+
 //========================================================================================================
 // scanline decoders and encoders
 
