@@ -31,8 +31,12 @@ void* stbir_resize(const(void)* input_pixels,  // input image
 ## Example with a `gamut` image with type `PixelType.rgba8`
 
 ```d
-    stbir_resize(input.scanptr(0), input.width, input.height, input.pitch,
-                 output.scanptr(0), output.pixels, output.width, output.height, output.pitch,
+    import gamut;
+    import stb_image_resize2;
+
+    // input, output are of type gamut.Image
+    stbir_resize(input.scanptr(0), input.width, input.height, input.pitchInBytes,
+                 output.scanptr(0), output.width, output.height, output.pitchInBytes,
                  STBIR_RGBA,
                  STBIR_TYPE_UINT8_SRGB,
                  STBIR_EDGE_CLAMP,
