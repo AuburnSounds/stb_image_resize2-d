@@ -5,12 +5,12 @@ A port of stb_image_resize2.h in D.
   
 Original: https://github.com/nothings/stb/blob/master/stb_image_resize2.h
 
-
-
 ## Resize an image using the "medium-complexity" API
 
 Easiest way to use `stb_image_resize2-d` is probably the following function:
 ```d
+import stb_image_resize2;
+
 void* stbir_resize(const(void)* input_pixels,  // input image
                    int input_w,                // input width
                    int input_h,                // input height
@@ -28,6 +28,16 @@ void* stbir_resize(const(void)* input_pixels,  // input image
 
 ```
 
+## Example with a `gamut` image with type `PixelType.rgba8`
+
+```d
+    stbir_resize(input.scanptr(0), input.width, input.height, input.pitch,
+                 output.scanptr(0), output.pixels, output.width, output.height, output.pitch,
+                 STBIR_RGBA,
+                 STBIR_TYPE_UINT8_SRGB,
+                 STBIR_EDGE_CLAMP,
+                 STBIR_FILTER_DEFAULT);
+```
 
 ## Changes
 
